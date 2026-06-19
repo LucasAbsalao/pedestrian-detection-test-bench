@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local Repos
+src/computer_vision/predict/
+
+# Ignored Extensions
+*.pt
+videos/*.mp4
