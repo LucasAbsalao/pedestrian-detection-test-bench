@@ -70,7 +70,7 @@ def parse_args() ->argparse.Namespace:
         type=int,
         nargs='+',
         default=[0],
-        help="Filters prediction to a set of class IDs. Default is [1], since it's the person's ID"
+        help="Filters prediction to a set of class IDs. Default is [0], since it's the person's ID"
     )
     parser.add_argument(
         "--all-classes",
@@ -81,7 +81,7 @@ def parse_args() ->argparse.Namespace:
         "--stream",
         type=str2bool,
         default=True,
-        help="Enables emmemory-efficient processing for vidoes or numerous images returning a generator."
+        help="Enables memory-efficient processing for vidoes or numerous images returning a generator."
     )
     parser.add_argument(
         "--save",
