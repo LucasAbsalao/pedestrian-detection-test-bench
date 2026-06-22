@@ -3,14 +3,19 @@ import numpy as np
 import torch
 import matplotlib
 import matplotlib.pyplot as plt
+import sys
+import os
+from pathlib import Path
+
+from .utils.transformations import fog, magnitude_of_gradient, minimax_normalization
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+DEPTH_ANYTHING_DIR = ROOT_DIR / "Depth-Anything-V2"
+
+if str(DEPTH_ANYTHING_DIR) not in sys.path:
+    sys.path.append(str(DEPTH_ANYTHING_DIR))
 
 from metric_depth.depth_anything_v2.dpt import DepthAnythingV2
-
-'''
-Run:
-python3 run.py --encoder vitl --load-from checkpoints/depth_anything_v2_metric_vkitti_vitl.pth --max-depth 80 --img-path /home/lucas/Documents/computer_vision/Depth-Anything-V2/assets/examples/demo11.jpg --outdir /home/lucas/Documents/computer_vision/videos --pred-only
-
-'''
 
 #image_path = "/home/lucas/Documents/computer_vision/Depth-Anything-V2/assets/examples/demo11.jpg"
 image_path = "/home/lucas/Documents/computer_vision/videos/original_image_plat.png"
@@ -39,8 +44,7 @@ depth = model.infer_image(raw_img) # HxW depth map in meters in cuda
 plt.imshow(depth, cmap=cmap)    
 plt.show()
 
-depth_u8 = (1 - (depth - depth.min()) / (depth.max() - depth.min())) * 255
-depth_u8 = depth_u8.astype(np.uint8)
+depth_u8 = minimax_normalization(depth)
 
 print("Shape: ", depth_u8.shape)
 print("Max: ", depth_u8.max(), "\nMin:", depth_u8.min())
@@ -53,36 +57,12 @@ name = image_path.split('/')[-1]
 cv2.imwrite(f"/home/lucas/Documents/computer_vision/videos/depth/{name}", depth_u8)
 
 # Contrast
-grad_x = cv2.Sobel(depth_u8, cv2.CV_64F, 1, 0)
-grad_y = cv2.Sobel(depth_u8, cv2.CV_64F, 0, 1)
-
-magnitude = np.sqrt(grad_x**2 + grad_y**2)
-
-magnitude_normalized = (magnitude - magnitude.min()) / (magnitude.max() - magnitude.min()) * 255
-magnitude_normalized = magnitude_normalized.astype(np.uint8)
+magnitude = magnitude_of_gradient(depth_u8)
+magnitude_normalized = minimax_normalization(magnitude)
 
 cv2.imshow("Magnitude", cv2.resize(magnitude_normalized, (1280,720)))
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-
-def fog(image, depth_map, minimum_distance, airlight = None):
-    image = image.astype(np.float32)
-
-    k = 3/minimum_distance
-    
-    if airlight is None:
-        atmospheric_light = np.mean(image)
-    else:
-        atmospheric_light = airlight
-
-    if len(depth.shape)<3:
-        beer_lambert = np.repeat(np.exp((-k)*depth_map)[..., np.newaxis], 3, axis=2) 
-    else:
-        beer_lambert = depth_map
-
-    new_image = image * beer_lambert + atmospheric_light * (1 - beer_lambert)
-
-    return new_image
 
 minimum_distance = 10
 
