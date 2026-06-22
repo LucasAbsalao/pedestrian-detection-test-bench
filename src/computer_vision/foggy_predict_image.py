@@ -4,7 +4,7 @@ import torch
 import matplotlib
 import matplotlib.pyplot as plt
 
-from depth_anything_v2.dpt import DepthAnythingV2
+from metric_depth.depth_anything_v2.dpt import DepthAnythingV2
 
 '''
 Run:
