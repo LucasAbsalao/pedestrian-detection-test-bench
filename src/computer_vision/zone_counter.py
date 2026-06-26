@@ -108,6 +108,8 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
+def la_recall(ground_truth, predictions, t_start, t_end, alpha, beta, sampling):
+    delta = (t - t_start) / (t_end-t_start) 
 
 def main():
     args = parse_args()
@@ -140,12 +142,14 @@ def main():
     # Calculate adaptive delay based on FPS
     delay = max(1, int(1000 / (fps if fps > 0 else 30)))
     
+    # Initial values for metrics statistics
     tp = 0
     fn = 0
     fp = 0
     tn = 0
     fn_weighted = 0
     tp_weighted = 0
+    w_recall_weights = [1,3,5]
 
     ground_truth = np.zeros((total_frames), dtype=int)
     detected = np.zeros((total_frames,), dtype=int)
@@ -196,10 +200,10 @@ def main():
     for i in range(total_frames):
         if ground_truth[i] < 3 and detected[i]==1:
             tp += 1
-            tp_weighted += 3 - ground_truth[i]
+            tp_weighted += w_recall_weights[3 - ground_truth[i]]
         elif ground_truth[i] < 3 and not detected[i]==1:
             fn += 1
-            fn_weighted += 3 - ground_truth[i]
+            fn_weighted += w_recall_weights[3 - ground_truth[i]]
         elif not ground_truth[i] < 3 and detected[i]==1:
             fp += 1
         elif not ground_truth[i] < 3 and not detected[i]==1:
@@ -216,8 +220,6 @@ def main():
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
     w_recall = tp_weighted / (tp_weighted + fn_weighted) if (tp_weighted + fn_weighted) > 0 else 0.0
-    print(tp_weighted)
-    print(fn_weighted)
     
     print("\n" + "="*30 + " EVALUATION REPORT " + "="*30)
     print(f"Elapsed Time: {end_time - initial_time}")
