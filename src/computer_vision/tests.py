@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import matplotlib
 import random
 
 def write_lines(image, point_d, point_u, width):
@@ -59,35 +60,37 @@ def intersect(point, trapezes, colors):
                 
     return colors[-1]
 
+cap = cv2.VideoCapture("/home/lucas/Documents/computer_vision/videos/distortion/marcher_fog.mp4")
+
+assert cap.isOpened(), "Error reading video file"
 
 
-width = 1080
-height = 720
+w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
+#video_writer = cv2.VideoWriter(str(project_path / f"{str(args.name)}.avi"), cv2.VideoWriter_fourcc(*'mp4v'), fps, (w,h))
 
-image = np.zeros((height, width,3), dtype = np.uint8)
+cmap = matplotlib.colormaps.get_cmap("Spectral")
 
-point_1 = (300, 700)
-point_2 = (500, 300)
+while cap.isOpened():
+    success, im0 = cap.read()
 
-image, trapezes = write_lines(image, point_1, point_2, width)
+    if not success:
+        print("Video frame is empty or processing is complete.")
+        break
+       
 
-colors = [(0,0,255), (0,150,255), (0,255,0), (255,0,0)]
+    new_img = (im0 - np.min(im0)) / (np.max(im0) - np.min(im0))
 
-centers = np.random.randint(0, [width, height], size=(50,2))
+    new_img = (cmap(new_img[:,:,1].squeeze())[:,:,:3] * 255)[:,:,::-1].astype(np.uint8)
 
-for center in centers:
-    color = intersect(center, trapezes, colors)
-    cv2.circle(image, center=center, radius=1, color=color, thickness=-1)
+    print(new_img.shape)
 
-    cv2.imshow("Teste", image)
-    cv2.waitKey(2)
+    cv2.imshow("teste", new_img)
 
-# center = (int(random.uniform(0,width)), int(random.uniform(0,height)))
-# print(center)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-print("trapezes: ", trapezes) #[[(300, 700), (366, 567), (714, 567), (780, 700)], [(366, 567), (433, 434), (647, 434), (714, 567)], [(433, 434), (500, 300), (580, 300), (647, 434)]]
+        #video_writer.write(im0)
 
-cv2.imshow("Teste", image)
-cv2.waitKey(0)
+cap.release()
+#video_writer.release()
 cv2.destroyAllWindows()
-

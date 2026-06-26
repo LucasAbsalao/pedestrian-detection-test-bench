@@ -7,6 +7,7 @@ import cv2
 
 def fog(image: NDArray, depth_map: NDArray, minimum_distance: float,
         airlight: float | None = None, per_channel_airlight: bool = False) -> NDArray:
+    
     image = image.astype(np.float32)
 
     k = 3 / minimum_distance
@@ -37,7 +38,7 @@ def gaussian_noise(image: NDArray, mean: float = 0.0, stdev: float = 0.2) -> NDA
 
 def gaussian_blur(image: NDArray, kernel_size: int = 11, stdev: float = 0.) -> NDArray:
     new_image = cv2.GaussianBlur(image, ksize=(kernel_size, kernel_size), sigmaX=stdev, sigmaY=stdev)
-    return new_image
+    return new_image.astype(image.dtype)
 
 def magnitude_of_gradient(image: NDArray) -> NDArray:
     grad_x = cv2.Sobel(image, cv2.CV_64F, 1, 0)

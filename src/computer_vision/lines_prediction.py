@@ -1,7 +1,7 @@
 '''
 
 To execute:
-python3 meters_prediction.py \
+python3 lines_prediction.py \
     --model_path yolo26x.pt \
     --video /home/lucas/Documents/computer_vision/videos/GoLiveTogether.mp4 \
     --name GoLiveTogether_meters \
@@ -148,9 +148,8 @@ def intersect(point, trapezes, verbose = False):
 
 def write_bbox(image, bbox, trapezes, rectangle = True):
     colors = [(0,0,255), (0,150,255), (0,255,0), (255,0,0)]
-    print("Writing Bounding Box in frame: ")
+    zones = []
     for box in bbox:
-        print("BBOX")
         points = [(box[0], box[1]), (box[0], box[3]), (box[2], box[3]), (box[2], box[1])]
         colors_circles = []
         for p in points:
@@ -163,6 +162,10 @@ def write_bbox(image, bbox, trapezes, rectangle = True):
             cv2.circle(image, center=(int(box[0]), int(box[3])), radius=6, color=colors[colors_circles[1]], thickness=-1)
             cv2.circle(image, center=(int(box[2]), int(box[3])), radius=6, color=colors[colors_circles[2]], thickness=-1)
             cv2.circle(image, center=(int(box[2]), int(box[1])), radius=6, color=colors[colors_circles[3]], thickness=-1)
+
+        zones.append(min(colors_circles))
+
+    return zones
 
     
 
@@ -194,64 +197,82 @@ def write_lines(image, point_d, point_u, width):
     
     return image 
 
-args = parse_args()
+def main():
+    args = parse_args()
 
-model_path = args.model_path if args.model_path.exists() else str(args.model_path)
-video_path = args.video.resolve()
-project_path = args.project.resolve()
+    model_path = args.model_path if args.model_path.exists() else str(args.model_path)
+    video_path = args.video.resolve()
+    project_path = args.project.resolve()
 
-if args.all_classes:
-    classes_to_detect = None
-else:
-    classes_to_detect = args.classes
+    if args.all_classes:
+        classes_to_detect = None
+    else:
+        classes_to_detect = args.classes
 
-print(video_path)
-cap = cv2.VideoCapture(video_path)
+    print(video_path)
+    cap = cv2.VideoCapture(video_path)
 
-assert cap.isOpened(), "Error reading video file"
+    assert cap.isOpened(), "Error reading video file"
 
 
-w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
-video_writer = cv2.VideoWriter(str(project_path / f"{str(args.name)}.avi"), cv2.VideoWriter_fourcc(*'mp4v'), fps, (w,h))
+    w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
+    video_writer = cv2.VideoWriter(str(project_path / f"{str(args.name)}.avi"), cv2.VideoWriter_fourcc(*'mp4v'), fps, (w,h))
 
-model = YOLO(model_path)
+    model = YOLO(model_path)
 
-yolo_kwargs = {
-    "classes": classes_to_detect,
-    "project": str(project_path),
-    "name": args.name,
-    "stream": args.stream,
-    "save": args.save,
-    "save_txt": args.save_txt,
-    "save_conf": args.save_txt,
-    "show": args.show
-}
+    yolo_kwargs = {
+        "classes": classes_to_detect,
+        "project": str(project_path),
+        "name": args.name,
+        "stream": args.stream,
+        "save": args.save,
+        "save_txt": args.save_txt,
+        "save_conf": args.save_txt,
+        "show": args.show
+    }
 
-#Points of depth perspective
-point_1 = (300, 700)
-point_2 = (500, 300)
+    #Points of depth perspective
+    point_1 = (400, 1000)
+    point_2 = (550, 600)
 
-trapezes = generate_trapezes(point_d=point_1, point_u=point_2, width=w)
+    trapezes = generate_trapezes(point_d=point_1, point_u=point_2, width=w)
 
-while cap.isOpened():
-    success, im0 = cap.read()
+    count_frames = 0
 
-    if not success:
-        print("Video frame is empty or processing is complete.")
-        break
+    with open(f"yolo_{args.name}.txt", "w") as f:
+        while cap.isOpened():
+            success, im0 = cap.read()
 
-    results = model(source = im0, **yolo_kwargs)
+            if not success:
+                print("Video frame is empty or processing is complete.")
+                break
 
-    print("Results Obtained: ")
-    for r in results:
-        print("------------------------------------- Bounding Boxes -------------------------------------")
+            results = model(source = im0, **yolo_kwargs)
 
-        im0 = write_lines(im0, point_1, point_2, w)
-        
-        write_bbox(image = im0, bbox = r.boxes.xyxy.cpu().numpy(), trapezes = trapezes, rectangle=True)
+            print("Results Obtained: ")
+            f.write(f"{count_frames}\n")
+            for r in results:
+                print("------------------------------------- Bounding Boxes -------------------------------------")
 
-        video_writer.write(im0)
+                im0 = write_lines(im0, point_1, point_2, w)
+                
+                zone = write_bbox(image = im0, bbox = r.boxes.xyxy.cpu().numpy(), trapezes = trapezes, rectangle=True)
 
-cap.release()
-video_writer.release()
-cv2.destroyAllWindows()
+                video_writer.write(im0)
+
+                bbox = r.boxes.xyxy.cpu().numpy()
+                for bbox_idx in range(len(bbox)):
+                    f.write(f"{zone[bbox_idx]} ")
+                    for coord in bbox[bbox_idx]:
+                        f.write(f"{coord} ")
+                    f.write("\n")
+
+            count_frames += 1
+
+    cap.release()
+    video_writer.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()

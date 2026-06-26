@@ -1,0 +1,9 @@
+{
+    "python.analysis.extraPaths": [
+        "./Depth-Anything-V2",
+        "./src/computer_vision"
+    ],
+    "python.terminal.useEnvFile": true,
+    "python-envs.defaultEnvManager": "ms-python.python:poetry",
+    "python-envs.defaultPackageManager": "ms-python.python:poetry"
+}

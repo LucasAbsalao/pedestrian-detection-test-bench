@@ -7,11 +7,15 @@ import sys
 import os
 from pathlib import Path
 
-from .utils.transformations import fog, magnitude_of_gradient, minimax_normalization
-
 ROOT_DIR = Path(__file__).resolve().parents[2]
-DEPTH_ANYTHING_DIR = ROOT_DIR / "Depth-Anything-V2"
 
+# SCRIPT_DIR = Path(__file__).resolve().parent
+# if str(SCRIPT_DIR) not in sys.path:
+#     sys.path.append(str(SCRIPT_DIR))
+
+from utils.transformations import fog, magnitude_of_gradient, minimax_normalization
+
+DEPTH_ANYTHING_DIR = ROOT_DIR / "Depth-Anything-V2"
 if str(DEPTH_ANYTHING_DIR) not in sys.path:
     sys.path.append(str(DEPTH_ANYTHING_DIR))
 

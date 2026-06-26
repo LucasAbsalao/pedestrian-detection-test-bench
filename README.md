@@ -20,3 +20,7 @@ ctrl+d to exit or ctrl+p and ctrl+q to let it running.
 docker start yolo_test
 
 docker exec -it yolo_test /bin/bash
+
+
+## TODO
+In the actual project, just frames with detection are saved.
