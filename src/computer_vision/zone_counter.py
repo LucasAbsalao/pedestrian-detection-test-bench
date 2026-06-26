@@ -1,10 +1,9 @@
 '''
 To execute:
 python3 zone_counter.py \
-    --video /home/lucas/Documents/computer_vision/videos/GoLiveTogether.mp4 \
-    --predictions yolo_GoLiveTogether_meters.txt \
-    --point-d 400 1000 \
-    --point-u 550 600
+    --video /home/lucas/Documents/computer_vision/videos/marcher_180.mp4 \
+    --predictions yolo_marcher_180_n.txt \
+    --point-d 400 1000     --point-u 550 600
 '''
 
 import time
@@ -13,6 +12,7 @@ import argparse
 from pathlib import Path
 import sys
 import numpy as np
+from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
 ROOT_DIRECTORY = Path(__file__).resolve().parents[2]
@@ -108,8 +108,20 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-def la_recall(ground_truth, predictions, t_start, t_end, alpha, beta, sampling):
+def calculate_la_recall(ground_truth : NDArray, predictions : NDArray, 
+              t_start : int, t_end : int, 
+              alpha : float, beta: float, 
+              minimum_weight: float, sampling : int = 1):
+    
+    if sampling != 1:
+        raise NotImplemented("Sampling different from one was not yet implemented")
+    t = np.arange(len(ground_truth), step=sampling)
     delta = (t - t_start) / (t_end-t_start) 
+    s_delta = 1 + minimum_weight - 1 / 1 + np.exp(-beta * (2*delta - 1))
+
+    larec = np.pow(alpha, t) * s_delta * (predictions<3).astype(int)
+
+    return larec
 
 def main():
     args = parse_args()
@@ -200,10 +212,10 @@ def main():
     for i in range(total_frames):
         if ground_truth[i] < 3 and detected[i]==1:
             tp += 1
-            tp_weighted += w_recall_weights[3 - ground_truth[i]]
+            tp_weighted += w_recall_weights[2 - ground_truth[i]]
         elif ground_truth[i] < 3 and not detected[i]==1:
             fn += 1
-            fn_weighted += w_recall_weights[3 - ground_truth[i]]
+            fn_weighted += w_recall_weights[2 - ground_truth[i]]
         elif not ground_truth[i] < 3 and detected[i]==1:
             fp += 1
         elif not ground_truth[i] < 3 and not detected[i]==1:
@@ -220,6 +232,17 @@ def main():
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
     w_recall = tp_weighted / (tp_weighted + fn_weighted) if (tp_weighted + fn_weighted) > 0 else 0.0
+
+    la_recall = calculate_la_recall(ground_truth=ground_truth,
+                                    predictions=detected,
+                                    t_start=1,
+                                    t_end=2,
+                                    alpha=1,
+                                    beta=4,
+                                    minimum_weight=0.2,
+                                    sampling = 1)
+    
+    plt.plot(la_recall)
     
     print("\n" + "="*30 + " EVALUATION REPORT " + "="*30)
     print(f"Elapsed Time: {end_time - initial_time}")
