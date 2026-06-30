@@ -24,3 +24,4 @@ docker exec -it yolo_test /bin/bash
 
 ## TODO
 In the actual project, just frames with detection are saved.
+add sampling to the latency recall.

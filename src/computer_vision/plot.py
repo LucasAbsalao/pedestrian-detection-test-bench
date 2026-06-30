@@ -4,14 +4,14 @@ import numpy as np
 n_points = 400
 t = np.arange(-20, 40, 60/n_points)
 
-beta = 4
-minimum_weight = 0.2
+beta = 4.0
+minimum_weight = 0
 t_start = 10
 t_end = 30
 
 delta = (t - t_start) / (t_end-t_start) 
-y1 = 1 + minimum_weight - 1 / (1 + np.exp(-beta * (delta - 1/2)))
-y2 = 1 + minimum_weight - 1 / (1 + np.exp(-beta * (2*delta - 1)))
+y1 = 1 + minimum_weight - (1 / (1 + np.exp(-beta * (delta - 1/2))))
+y2 = 1 + minimum_weight - 1 / (1 + np.exp(-beta * (2*delta - 1)))*(1-minimum_weight)
 
 fig, ax = plt.subplots(1,2)
 ax[0].plot(t,y1, color = 'red')
