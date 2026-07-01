@@ -239,7 +239,7 @@ def main():
 
     count_frames = 0
 
-    with open(f"yolo_{args.name}.txt", "w") as f:
+    with open(str(ROOT_DIRECTORY / "annotations" / f"yolo_{args.name}.txt"), "w") as f:
         while cap.isOpened():
             success, im0 = cap.read()
 

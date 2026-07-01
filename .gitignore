@@ -219,8 +219,9 @@ __marimo__/
 
 # Local Repos
 src/computer_vision/predict/
+videos/
+data/videos/
 
 # Ignored Extensions
 *.pt
 *.pth
-videos/**/*.mp4
