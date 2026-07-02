@@ -43,6 +43,9 @@ cmap = matplotlib.colormaps.get_cmap('Spectral')
 
 
 raw_img = cv2.imread(image_path)
+
+if raw_img is None:
+    raise FileNotFoundError("OpenCV couldn't find the file.")
 depth = model.infer_image(raw_img) # HxW depth map in meters in cuda
 
 plt.imshow(depth, cmap=cmap)    

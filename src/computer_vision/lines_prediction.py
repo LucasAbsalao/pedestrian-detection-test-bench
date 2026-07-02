@@ -8,7 +8,8 @@ python3 lines_prediction.py \
     --save_txt False \
     --save False \
     --show False \
-    --stream False
+    --stream False \
+    --point-d 400 1000     --point-u 550 600
 
 
 '''
@@ -101,7 +102,20 @@ def parse_args() ->argparse.Namespace:
         default=True,
         help="Displays the annotated files in a window"
     )
-
+    parser.add_argument(
+        "--point-d",
+        type=int,
+        nargs=2,
+        default=[400, 1000],
+        help="Lower trapezoid point (x y)"
+    )
+    parser.add_argument(
+        "--point-u",
+        type=int,
+        nargs=2,
+        default=[550, 600],
+        help="Upper trapezoid point (x y)"
+    )
     return parser.parse_args()
 
 def generate_trapezes(point_d, point_u, width):
@@ -146,7 +160,7 @@ def intersect(point, trapezes, verbose = False):
     return i
 
 
-def write_bbox(image, bbox, trapezes, rectangle = True):
+def draw_bbox(image, bbox, trapezes, rectangle = True):
     colors = [(0,0,255), (0,150,255), (0,255,0), (255,0,0)]
     zones = []
     for box in bbox:
@@ -232,14 +246,14 @@ def main():
     }
 
     #Points of depth perspective
-    point_1 = (400, 1000)
-    point_2 = (550, 600)
+    point_1 = args.point_d
+    point_2 = args.point_u
 
     trapezes = generate_trapezes(point_d=point_1, point_u=point_2, width=w)
 
     count_frames = 0
 
-    with open(str(ROOT_DIRECTORY / "annotations" / f"yolo_{args.name}.txt"), "w") as f:
+    with open(str(ROOT_DIRECTORY / "data" / "annotations" / f"yolo_{args.name}.txt"), "w") as f:
         while cap.isOpened():
             success, im0 = cap.read()
 
@@ -256,7 +270,7 @@ def main():
 
                 im0 = write_lines(im0, point_1, point_2, w)
                 
-                zone = write_bbox(image = im0, bbox = r.boxes.xyxy.cpu().numpy(), trapezes = trapezes, rectangle=True)
+                zone = draw_bbox(image = im0, bbox = r.boxes.xyxy.cpu().numpy(), trapezes = trapezes, rectangle=True)
 
                 video_writer.write(im0)
 

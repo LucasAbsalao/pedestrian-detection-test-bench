@@ -116,6 +116,9 @@ def set_parameters():
     }
     return params
 
+def get_transformations():
+    return ['gaussian_noise', 'gaussian_blur', 'fog']
+
 def main():
     args = parse_args()
 

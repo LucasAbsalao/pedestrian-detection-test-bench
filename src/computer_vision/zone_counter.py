@@ -8,6 +8,7 @@ python3 zone_counter.py \
 
 import time
 import cv2
+import csv
 import argparse
 from pathlib import Path
 import sys
@@ -20,8 +21,9 @@ ROOT_DIRECTORY = Path(__file__).resolve().parents[2]
 if str(ROOT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(ROOT_DIRECTORY))
 
-from computer_vision.lines_prediction import generate_trapezes, write_lines
+from computer_vision.lines_prediction import write_lines
 
+DEFAULT_CSV_FILE = Path(__file__).resolve().parents[0] / "results.csv"
 
 ZONE_COLORS = [(0, 0, 255), (0, 150, 255), (0, 255, 0), (255, 0, 0)]
 
@@ -59,8 +61,8 @@ def draw_bboxes(image, frame_data):
         cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
     return image
 
-
 def str2bool(v: str | bool) -> bool:
+    """Auxiliar function for argparse to read a boolean value."""
     if isinstance(v, bool):
         return v
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -69,8 +71,7 @@ def str2bool(v: str | bool) -> bool:
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
-
-
+    
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Count 'd' key presses when min zone < 3"
@@ -106,6 +107,18 @@ def parse_args() -> argparse.Namespace:
         type=str2bool,
         default=True,
         help="Display the video with overlay"
+    )
+    parser.add_argument(
+        "--draw",
+        type=bool,
+        default=False,
+        help="If set, it shows bounding boxes, lines and zones in the image"
+    )
+    parser.add_argument(
+        "--csv",
+        type=Path,
+        default=DEFAULT_CSV_FILE,
+        help="Path to the csv file with all metrics obtained from this video"
     )
     return parser.parse_args()
 
@@ -159,7 +172,6 @@ def main():
     
     point_d = tuple(args.point_d)
     point_u = tuple(args.point_u)
-    trapezes = generate_trapezes(point_d, point_u, w)
     
     # Calculate adaptive delay based on FPS
     delay = max(1, int(1000 / (fps if fps > 0 else 30)))
@@ -186,9 +198,9 @@ def main():
         min_zone = min((zone for zone, _ in frame_data), default=3)
         ground_truth[frame_idx] = min_zone
         
-        # Draw visual elements on frame
-        frame = write_lines(frame, point_d, point_u, w)
-        frame = draw_bboxes(frame, frame_data)
+        if args.draw:
+            frame = write_lines(frame, point_d, point_u, w)
+            frame = draw_bboxes(frame, frame_data)
         
         # Display current metrics overlay
         cv2.putText(frame, f"Frame: {frame_idx}/{total_frames}", (20, 40), 
@@ -219,7 +231,7 @@ def main():
     tn = 0
     fn_weighted = 0
     tp_weighted = 0
-    w_recall_weights = [1,5,10]
+    w_recall_weights = [1,3,6]
 
     general_statistics = Stats(general = True)
     statistics_per_zone = {
@@ -227,8 +239,6 @@ def main():
         'orange': Stats(),
         'green': Stats()
     }
-
-    zone_names = ['green', 'orange', 'red']
 
     for i in range(total_frames):
         statistics_per_zone["green"].update(expected = ground_truth[i] == 2, predicted = detected[i]==1)
@@ -286,13 +296,14 @@ def main():
                                                       predictions = detected,
                                                       t_start = t_start,
                                                       t_end = t_end)
+    
     class_la_recall = general_statistics.calculate_latency_recall(ground_truth = ground_truth,
                                                                   predictions = detected,
                                                                   t_start = t_start,
                                                                   t_end = t_end)
     
     
-    plt.plot(la_recall, linewidth=7.0)
+    plt.plot(la_recall, linewidth=2.0)
     plt.plot(class_la_array)
     plt.title("Latency Recall Evaluation")
     plt.vlines([t_start, t_end], 0, 1 + minimum_weight, linestyles='dashed')
@@ -336,6 +347,30 @@ def main():
     plt.plot(detected)
     plt.grid()
     plt.show()
+
+    results = {
+        'Name': str(video_path).split('/')[-1],
+        'Accuracy': general_statistics.calculate_accuracy(),
+        'Precision': general_statistics.calculate_precision(),
+        'Recall':general_statistics.calculate_recall(),
+        'Latency Recall': general_statistics.la_recall,
+        'Weighted Recall': general_statistics.calculate_weighted_recall(),
+        'Red Recall': statistics_per_zone['red'].calculate_recall(),
+        'Orange Recall': statistics_per_zone['orange'].calculate_recall(),
+        'Green Recall': statistics_per_zone['green'].calculate_recall()
+    }
+    csv_file_path = args.csv.resolve()
+
+    if csv_file_path.exists():
+        with open(csv_file_path, "a", newline='') as csvf:
+            print("Adding results to existing file.")
+            writer = csv.DictWriter(csvf, fieldnames=list(results.keys()))
+            writer.writerow(results)
+    else:
+        with open(csv_file_path, "w", newline='') as csvf:
+            writer = csv.DictWriter(csvf, fieldnames=list(results.keys()))
+            writer.writeheader()
+            writer.writerow(results)
 
 if __name__ == "__main__":
     main()

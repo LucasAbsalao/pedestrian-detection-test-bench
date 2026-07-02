@@ -41,7 +41,7 @@ class Stats:
 
         self.general_purpose = general
         if general:
-            self.weights = [1, 5, 10]
+            self.weights = [1, 3, 6]
             self.weighted_tp = 0
             self.weighted_fn = 0
 
@@ -104,10 +104,10 @@ class Stats:
         return self.tp + self.tn + self.fp + self.fn
     
     def calculate_weighted_recall(self):
-        if self.weighted_fn + self.weighted_tp > 0:
+        if self.weighted_fn + self.weighted_tp > 0 and self.general_purpose:
             return self.weighted_tp / (self.weighted_tp + self.weighted_fn)
         else:
-            return 0
+            return 0.0
         
     
     def latency_array(self, ground_truth : NDArray, predictions : NDArray, 
@@ -135,16 +135,19 @@ class Stats:
     def calculate_latency_recall(self, ground_truth : NDArray, predictions : NDArray, 
                                  t_start : int, t_end : int) -> float:
         
-        la_rec = self.latency_array(ground_truth=ground_truth,
-                                   predictions = predictions,
-                                   t_start=t_start,
-                                   t_end=t_end)
-        
-        positive_la_recall = la_rec[la_rec>0]
-        avg_la_recall = np.mean(positive_la_recall).astype(float)
-        self.la_recall = avg_la_recall
+        if self.general_purpose:
+            la_rec = self.latency_array(ground_truth=ground_truth,
+                                    predictions = predictions,
+                                    t_start=t_start,
+                                    t_end=t_end)
+            
+            positive_la_recall = la_rec[la_rec>0]
+            avg_la_recall = np.mean(positive_la_recall).astype(float)
+            self.la_recall = avg_la_recall
 
-        return avg_la_recall
+            return avg_la_recall
+        else:
+            return 0.0
             
     def __str__(self) -> str:
         absolute_variables = f"Hits (True Positive):        {self.tp}\n" + \
