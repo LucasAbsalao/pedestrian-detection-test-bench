@@ -6,6 +6,8 @@ python3 video_augmentation.py --video /home/lucas/Documents/computer_vision/vide
     --name marcher_gaussian_noise \
     --distortion gaussian_noise
 
+    Salt and Pepper
+    Bruit Gaussien avec Lissage
 '''
 
 
@@ -33,7 +35,7 @@ if str(DEPTH_ANYTHING_DIR) not in sys.path:
 from metric_depth.depth_anything_v2.dpt import DepthAnythingV2
 
 DEFAULT_TRANSF_VIDEOS_DIR = ROOT_DIR / "videos" / "distortions"
-DEFAULT_DISTORTION_PARAMS_PATH = ROOT_DIR / 'src' / 'computer_vision' / 'benchmark'
+DEFAULT_DISTORTION_PARAMS_PATH = ROOT_DIR / 'src' / 'computer_vision' / 'config'
 DEFAULT_MODELS_PATH = ROOT_DIR / 'src' / 'computer_vision' / 'models'
 
 def parse_args(arg_list=None) -> argparse.Namespace:
@@ -147,7 +149,7 @@ def load_parameters() -> dict[str, Any]:
     return params
 
 def get_transformations():
-    return ['gaussian_noise', 'gaussian_blur'] #'fog']
+    return ['gaussian_noise', 'gaussian_blur', 'fog']
 
 def transform(arg_list=None):
     args = parse_args(arg_list)
@@ -158,9 +160,12 @@ def transform(arg_list=None):
     dest.mkdir(parents=True, exist_ok=True)
     dest_folder = dest.resolve()
 
-    dest_file = dest_folder / f"{args.name}.mp4"
+    if len(args.name) == 0:
+        dest_file = dest_folder / str(video_path.stem) + f'_{args.distorion}.mp4'
+    else:
+        dest_file = dest_folder / f"{args.name}.mp4"
 
-    cap = cv2.VideoCapture(video_path)
+    cap = cv2.VideoCapture(str(video_path))
 
     assert cap.isOpened(), "Error reading file"
 

@@ -97,7 +97,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--point-u",
-        typframee=int,
+        type=int,
         nargs=2,
         default=[550, 600],
         help="Upper trapezoid point (x y)"
@@ -245,26 +245,10 @@ def count_zones():
         statistics_per_zone["orange"].update(expected = ground_truth[i] == 1, predicted = detected[i]==1)
         statistics_per_zone["red"].update(expected = ground_truth[i] == 0, predicted = detected[i]==1)
         general_statistics.update(expected=ground_truth[i]<3, predicted = detected[i]==1, weight_idx=2-ground_truth[i])
-
-        if ground_truth[i] < 3 and detected[i]==1:
-            tp += 1
-            tp_weighted += w_recall_weights[2 - ground_truth[i]]
-        elif ground_truth[i] < 3 and not detected[i]==1:
-            fn += 1
-            fn_weighted += w_recall_weights[2 - ground_truth[i]]
-        elif not ground_truth[i] < 3 and detected[i]==1:
-            fp += 1
-        elif not ground_truth[i] < 3 and not detected[i]==1:
-            tn += 1
     
     # Calculate performance metrics
-    processed_frames = tp + fn + fp + tn
+    processed_frames = general_statistics.total_evaluations()
     assert processed_frames == total_frames, "Problem retrieving information from the video -> processed frames are different than total frames"
-
-    accuracy = (tp + tn) / processed_frames if processed_frames > 0 else 0.0
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    w_recall = tp_weighted / (tp_weighted + fn_weighted) if (tp_weighted + fn_weighted) > 0 else 0.0
 
     t_start, t_end = -1, -1
     for i in range(total_frames):
@@ -282,54 +266,27 @@ def count_zones():
     minimum_weight = 0.2
     sampling = 1
     print(f"For this video the detection starts in frame {t_start} and finishes in frame {t_end}")
-
-    la_recall = calculate_la_recall(ground_truth=ground_truth,
-                                    predictions=detected,
-                                    t_start=t_start,
-                                    t_end=t_end,
-                                    alpha=alpha,
-                                    beta=beta,
-                                    minimum_weight=minimum_weight,
-                                    sampling=sampling)
     
     class_la_array = general_statistics.latency_array(ground_truth = ground_truth,
                                                       predictions = detected,
                                                       t_start = t_start,
                                                       t_end = t_end)
     
-    class_la_recall = general_statistics.calculate_latency_recall(ground_truth = ground_truth,
+    la_recall = general_statistics.calculate_latency_recall(ground_truth = ground_truth,
                                                                   predictions = detected,
                                                                   t_start = t_start,
                                                                   t_end = t_end)
     
-    
-    plt.plot(la_recall, linewidth=2.0)
+
     plt.plot(class_la_array)
     plt.title("Latency Recall Evaluation")
     plt.vlines([t_start, t_end], 0, 1 + minimum_weight, linestyles='dashed')
     plt.show()
     
-    positive_la_recall = la_recall[la_recall>0]
-    avg_la_recall = np.mean(positive_la_recall)
+    video_duration = int(total_frames//fps)
+    general_statistics.calculate_rfa(video_duration)
 
-    print("\n" + "="*30 + " EVALUATION REPORT " + "="*30)
-    print(f"Elapsed Time: {end_time - initial_time}")
-    print(f"Total Frames Evaluated: {processed_frames}")
-    print(f"Hits (True Positive):        {tp}")
-    print(f"Misses (False Negatives):       {fn}")
-    print(f"False Alarms (False Positives): {fp}")
-    print(f"Correct Rejections (True Negatives): {tn}")
-    print(f"Weighted True Positives: {tp_weighted}")
-    print(f"Weighted False Negatives: {fn_weighted}")
-    print("-"*79)
-    print(f"Accuracy:  {accuracy*100:.2f}%")
-    print(f"Precision: {precision*100:.2f}% (How reliable the detections were)")
-    print(f"Recall:    {recall*100:.2f}% (How many actual pedestrians were caught)")
-    print(f"WRecall:   {w_recall*100:.2f}% (How many actual pedestrian were caught with a bigger weight to closer detections)")
-    print(f"LaRecall:  {avg_la_recall*100:.2f}% (How many actual pedestrian were caught with a bigger weight to early detections)")
-    print("="*79)
-
-
+    
     print("-"*40 + " General Statistics " + "-"*40)
     print(general_statistics)
 
@@ -355,6 +312,10 @@ def count_zones():
         'Recall':general_statistics.calculate_recall(),
         'Latency Recall': general_statistics.la_recall,
         'Weighted Recall': general_statistics.calculate_weighted_recall(),
+        'P_miss': general_statistics.calculate_pmiss(),
+        'P_false_alarm': general_statistics.calculate_pfa(),
+        'R_false_alarm': general_statistics.r_fa,
+        'NDCR': general_statistics.calculate_ndcr(),
         'Red Recall': statistics_per_zone['red'].calculate_recall(),
         'Orange Recall': statistics_per_zone['orange'].calculate_recall(),
         'Green Recall': statistics_per_zone['green'].calculate_recall()

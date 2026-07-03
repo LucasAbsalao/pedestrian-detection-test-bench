@@ -1,0 +1,10 @@
+fog:
+  airlight: null
+  minimum_distance: 10
+  per_channel_airlight: false
+gaussian_blur:
+  kernel_size: 11
+  stdev: 0.0
+gaussian_noise:
+  mean: 0.0
+  stdev: 60.0

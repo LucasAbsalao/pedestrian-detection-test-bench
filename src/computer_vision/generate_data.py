@@ -27,6 +27,12 @@ def parse_args() -> argparse.Namespace:
         default = "dataset_engins_de_chantier",
         help="Name of the generated dataset. Will be present at yaml."
     )
+    parser.add_argument(
+        "--force",
+        type=bool,
+        default=True,
+        help="If set, erases any precedent annotation file for these videos."
+    )
     return parser.parse_args()
 
 
@@ -57,6 +63,13 @@ def generate():
     for file in mp4_files:
         txt_file = "yolo_" + file.stem + ".txt"
         txt_path = DEFAULT_ANNOTATION_DIR / txt_file
+
+        # Check if there is already some annotation to this file
+        if txt_path.exists() and not args.force:
+            print(f"The video {file} already has an annotation. If you want to change the annotation, set --force to True")
+            print("Skipping video")
+            continue
+
         print(f"Annotations will be saved in {txt_path}")
 
 
@@ -73,7 +86,7 @@ def generate():
             '--point-d', '400', '1000', 
             '--point-u', '550', '600'   
         ]
-        lines_prediction.predict(predict_args)
+        lines_prediction.predict(predict_args) 
 
         print("Annotations saved!!!\n\n")
 

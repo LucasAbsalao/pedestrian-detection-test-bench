@@ -223,7 +223,6 @@ def predict(args_list = None):
 
     model_path = args.model_path if args.model_path.exists() else str(args.model_path)
     video_path = args.video.resolve()
-    txt_path = args.txt_path.resolve()
     project_path = args.project.resolve()
 
     if args.all_classes:
@@ -262,6 +261,8 @@ def predict(args_list = None):
     trapezes = generate_trapezes(point_d=point_1, point_u=point_2, width=w)
 
     count_frames = 0
+
+    txt_path = args.txt_path.resolve()
 
     with open(str(txt_path / f"yolo_{args.name}.txt"), "w") as f:
         while cap.isOpened():
