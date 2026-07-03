@@ -2,7 +2,7 @@
 
 To execute:
 python3 lines_prediction.py \
-    --model_path yolo26x.pt \
+    --model_path models/yolo26x.pt \
     --video /home/lucas/Documents/computer_vision/videos/GoLiveTogether.mp4 \
     --name GoLiveTogether_meters \
     --save_txt False \
@@ -26,6 +26,7 @@ if str(ROOT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(ROOT_DIRECTORY))
 
 DEFAULT_PROJECT_PATH = ROOT_DIRECTORY / "src" / 'computer_vision' / "predict"
+DEFAULT_TXT_PATH = ROOT_DIRECTORY / "data" / "annotations"
 
 def str2bool(v: str | bool) -> bool:
     """Auxiliar function for argparse to read a boolean value."""
@@ -38,7 +39,7 @@ def str2bool(v: str | bool) -> bool:
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
-def parse_args() ->argparse.Namespace:
+def parse_args(args_list=None) ->argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Prediction using a yolo model"
     )
@@ -103,6 +104,12 @@ def parse_args() ->argparse.Namespace:
         help="Displays the annotated files in a window"
     )
     parser.add_argument(
+        "--txt-path",
+        type=Path,
+        default=DEFAULT_TXT_PATH,
+        help="Directory where the bounding boxes by frames will be saved"
+    )
+    parser.add_argument(
         "--point-d",
         type=int,
         nargs=2,
@@ -116,7 +123,7 @@ def parse_args() ->argparse.Namespace:
         default=[550, 600],
         help="Upper trapezoid point (x y)"
     )
-    return parser.parse_args()
+    return parser.parse_args(args_list)
 
 def generate_trapezes(point_d, point_u, width):
     point_r1 = point_d
@@ -211,11 +218,12 @@ def write_lines(image, point_d, point_u, width):
     
     return image 
 
-def main():
-    args = parse_args()
+def predict(args_list = None):
+    args = parse_args(args_list)
 
     model_path = args.model_path if args.model_path.exists() else str(args.model_path)
     video_path = args.video.resolve()
+    txt_path = args.txt_path.resolve()
     project_path = args.project.resolve()
 
     if args.all_classes:
@@ -223,6 +231,7 @@ def main():
     else:
         classes_to_detect = args.classes
 
+    print("Starting prediction of video: ")
     print(video_path)
     cap = cv2.VideoCapture(video_path)
 
@@ -230,7 +239,7 @@ def main():
 
 
     w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
-    video_writer = cv2.VideoWriter(str(project_path / f"{str(args.name)}.avi"), cv2.VideoWriter_fourcc(*'mp4v'), fps, (w,h))
+    video_writer = cv2.VideoWriter(str(project_path / f"{str(args.name)}.mp4"), cv2.VideoWriter_fourcc(*'mp4v'), fps, (w,h))
 
     model = YOLO(model_path)
 
@@ -242,7 +251,8 @@ def main():
         "save": args.save,
         "save_txt": args.save_txt,
         "save_conf": args.save_txt,
-        "show": args.show
+        "show": args.show,
+        "verbose": False
     }
 
     #Points of depth perspective
@@ -253,7 +263,7 @@ def main():
 
     count_frames = 0
 
-    with open(str(ROOT_DIRECTORY / "data" / "annotations" / f"yolo_{args.name}.txt"), "w") as f:
+    with open(str(txt_path / f"yolo_{args.name}.txt"), "w") as f:
         while cap.isOpened():
             success, im0 = cap.read()
 
@@ -263,10 +273,10 @@ def main():
 
             results = model(source = im0, **yolo_kwargs)
 
-            print("Results Obtained: ")
+            # print("Results Obtained: ")
             f.write(f"{count_frames}\n")
             for r in results:
-                print("------------------------------------- Bounding Boxes -------------------------------------")
+                # print("------------------------------------- Bounding Boxes -------------------------------------")
 
                 im0 = write_lines(im0, point_1, point_2, w)
                 
@@ -289,4 +299,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    predict()

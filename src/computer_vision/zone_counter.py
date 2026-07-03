@@ -97,7 +97,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--point-u",
-        type=int,
+        typframee=int,
         nargs=2,
         default=[550, 600],
         help="Upper trapezoid point (x y)"
@@ -146,7 +146,7 @@ def calculate_la_recall(ground_truth : NDArray, predictions : NDArray,
 
     return larec
 
-def main():
+def count_zones():
     args = parse_args()
     
     video_path = args.video.resolve()
@@ -373,4 +373,4 @@ def main():
             writer.writerow(results)
 
 if __name__ == "__main__":
-    main()
+    count_zones()

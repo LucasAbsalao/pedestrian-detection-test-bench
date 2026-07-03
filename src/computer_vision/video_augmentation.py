@@ -12,11 +12,14 @@ python3 video_augmentation.py --video /home/lucas/Documents/computer_vision/vide
 import cv2
 import numpy as np
 import typing
+from typing import Any
 from numpy.typing import NDArray
 import os
+import yaml
 import sys
 import argparse
 from pathlib import Path
+from tqdm import tqdm
 import torch
 
 from utils.transformations import gaussian_blur, gaussian_noise, fog
@@ -30,8 +33,10 @@ if str(DEPTH_ANYTHING_DIR) not in sys.path:
 from metric_depth.depth_anything_v2.dpt import DepthAnythingV2
 
 DEFAULT_TRANSF_VIDEOS_DIR = ROOT_DIR / "videos" / "distortions"
+DEFAULT_DISTORTION_PARAMS_PATH = ROOT_DIR / 'src' / 'computer_vision' / 'benchmark'
+DEFAULT_MODELS_PATH = ROOT_DIR / 'src' / 'computer_vision' / 'models'
 
-def parse_args() -> argparse.Namespace:
+def parse_args(arg_list=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Applying a transofrmation in each frame of a video'
     )
@@ -58,7 +63,7 @@ def parse_args() -> argparse.Namespace:
                         help="Distortion to be applied in the image"
     )
 
-    return parser.parse_args()
+    return parser.parse_args(arg_list)
 
 def generate_depth_model():
     encoder = 'vitl' # or 'vits', 'vitb'
@@ -72,32 +77,38 @@ def generate_depth_model():
     }
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.mps.is_available else 'cpu')
+    model_path = DEFAULT_MODELS_PATH / f'depth_anything_v2_metric_{dataset}_{encoder}.pth'
+
 
     model = DepthAnythingV2(**{**model_configs[encoder], 'max_depth': max_depth})
-    model.load_state_dict(torch.load(f'checkpoints/depth_anything_v2_metric_{dataset}_{encoder}.pth', map_location='cpu'))
+    model.load_state_dict(torch.load(str(model_path), map_location='cpu'))
     model = model.to(device).eval()
 
     return model
 
-def apply_function(image : NDArray, distortion_str : str, parameters : dict):
-    if distortion_str.lower() == 'gaussian_noise':
-        new_image = gaussian_noise(image, **parameters['gaussian_noise'])
+def apply_function(image : NDArray, distortion_str : str, parameters : dict, depth_model=None):
+    dist_name = distortion_str.lower()
 
-    elif distortion_str.lower() == 'gaussian_blur':
-        new_image = gaussian_blur(image, **parameters['gaussian_blur'])
+    if dist_name == 'gaussian_noise':
+        new_image = gaussian_noise(image, **parameters.get('gaussian_noise', {}))
 
-    elif distortion_str.lower() == 'fog':
-        depth = parameters["depth_model"].infer_image(image)
-        new_image = fog(image = image, depth_map = depth, **parameters['fog'])
+    elif dist_name == 'gaussian_blur':
+        new_image = gaussian_blur(image, **parameters.get('gaussian_blur', {}))
+
+    elif dist_name == 'fog':
+        if depth_model is None:
+            raise ValueError("A depth model needs to be instanced to apply the fog distortion. Recommended: DepthAnything2")
+        depth = depth_model.infer_image(image)
+        new_image = fog(image = image, depth_map = depth, **parameters.get('fog', {}))
         new_image = np.clip(new_image,0,255).astype(np.uint8)
 
     else:
-        raise Exception("There is no distortion function implemented for this string")
+        raise ValueError(f"There is no distortion function implemented for {dist_name}")
 
     return new_image
 
 
-def set_parameters():
+def create_distortions_parameters():
     params = {
         "gaussian_noise": {
             "mean": 0.0,
@@ -107,20 +118,39 @@ def set_parameters():
             "kernel_size": 11,
             "stdev": 0.
         },
-        "depth_model": DepthAnythingV2(),
         "fog": {
             "minimum_distance": 10,
             "airlight": None,
             "per_channel_airlight": False 
         }
     }
+    yaml_path = DEFAULT_DISTORTION_PARAMS_PATH / 'parameters.yaml'
+
+    yaml_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(str(yaml_path), "w") as yaml_file:
+        yaml.dump(params, yaml_file, default_flow_style=False)
+
+
+def load_parameters() -> dict[str, Any]:
+    params_file = DEFAULT_DISTORTION_PARAMS_PATH / 'parameters.yaml'
+
+    if not params_file.exists():
+        create_distortions_parameters()
+
+    with open(str(params_file), 'r') as yaml_file:
+        params = yaml.safe_load(yaml_file)
+
+    if not params:
+        raise FileNotFoundError("Couldn't parse yaml file named parameters.yaml with distortion's parameters. It could be empty or corrupted. Try running create_distortion_parameters before continue.")
+    
     return params
 
 def get_transformations():
-    return ['gaussian_noise', 'gaussian_blur', 'fog']
+    return ['gaussian_noise', 'gaussian_blur'] #'fog']
 
-def main():
-    args = parse_args()
+def transform(arg_list=None):
+    args = parse_args(arg_list)
 
     video_path = args.video.resolve()
 
@@ -132,37 +162,37 @@ def main():
 
     cap = cv2.VideoCapture(video_path)
 
-    assert cap.isOpened, "Error reading file"
+    assert cap.isOpened(), "Error reading file"
 
     w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     video_writer = cv2.VideoWriter(str(dest_file), cv2.VideoWriter_fourcc(*'mp4v'), fps, (w,h))
 
-    params = set_parameters()
+    params = load_parameters()
 
-    if args.distortion == 'fog':
-        model = generate_depth_model()
-        params['depth_model'] = model
+    model = generate_depth_model() if args.distortion == 'fog' else None
 
     count_frames = 0
 
-    while cap.isOpened():
-        success, im0 = cap.read()
+    for i in tqdm(range(total_frames), desc=f"Applying {args.distortion} to video: "):
+        if cap.isOpened():
+            success, im0 = cap.read()
 
-        if not success:
-            print("Video frame is either empty or processing is complete")
+            if not success:
+                break
+            
+            new_img = apply_function(image = im0, distortion_str = args.distortion, parameters = params, depth_model=model)
+
+            video_writer.write(new_img)
+
+            count_frames+=1
+
+        else:
             break
-        
-        new_img = apply_function(image = im0, distortion_str = args.distortion, parameters = params)
-
-        video_writer.write(new_img)
-
-        count_frames+=1
-        print(f"frame {count_frames}/{total_frames}")
 
     cap.release()
     video_writer.release()
 
 
 if __name__ == "__main__":
-    main()
+    transform()
