@@ -15,6 +15,7 @@ DEFAULT_DATA_DIR = ROOT_DIR / 'data'
 DEFAULT_ANNOTATION_DIR = DEFAULT_DATA_DIR / 'annotations'
 DEFAULT_VIDEO_DIR = DEFAULT_DATA_DIR / 'videos'
 DEFAULT_DISTORTION_DIR = DEFAULT_VIDEO_DIR / 'distortions'
+DEFAULT_MODELS_DIR = ROOT_DIR / 'src' / 'computer_vision' / 'models'
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,6 +27,12 @@ def parse_args() -> argparse.Namespace:
         type = str,
         default = "dataset_engins_de_chantier",
         help="Name of the generated dataset. Will be present at yaml."
+    )
+    parser.add_argument(
+        '--model',
+        type = str,
+        default = str(DEFAULT_MODELS_DIR / 'yolo26x.pt'),
+        help = 'Model used to annotate images.'
     )
     parser.add_argument(
         "--force",
@@ -74,7 +81,7 @@ def generate():
 
 
         predict_args = [
-            '--model_path', 'models/yolo26x.pt',
+            '--model_path', args.model,
             '--video', str(file),
             '--project', 'predict',
             '--name', file.stem,
@@ -116,7 +123,7 @@ def generate():
 
 
 
-    with open(str(DEFAULT_DATA_DIR / f'data_{args.name}.yaml'), "w") as yaml_file:
+    with open(str(DEFAULT_DATA_DIR / f'{args.name}.yaml'), "w") as yaml_file:
         yaml.dump(general_data, yaml_file, default_flow_style=False)
 
     print("\n\n\nGenerated YAML:\n")

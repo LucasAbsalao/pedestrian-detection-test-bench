@@ -6,8 +6,7 @@ import argparse
 import yaml
 from pathlib import Path
 
-import lines_prediction
-import video_augmentation
+import zone_counter
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -29,7 +28,7 @@ def parse_args() -> argparse.Namespace:
         "--name",
         type = str,
         default = "eval",
-        help="Name of this evaluation run. Results will be saved in a csv with teh same name"
+        help="Name of this evaluation run. Results will be saved in a csv with the same name."
     )
     parser.add_argument(
         "--dataset",
@@ -40,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def generate():
+def evaluate():
 
     args = parse_args()
 
@@ -48,75 +47,71 @@ def generate():
     print("-"*30 + " STARTING DATASET EVALUATION " + "-"*30)
     video_dir = DEFAULT_VIDEO_DIR.resolve()
 
-    yaml_file = DEFAULT_DATA_DIR / f'{args.name}.mp4'
+    yaml_file = DEFAULT_DATA_DIR / f'{args.dataset}.yaml'
     yaml_file = yaml_file.resolve()
 
     if not yaml_file.exists():
-        raise FileExistsError("The yaml file does not exist. Try adding a yaml file to the data via generate_data module")
+        raise FileExistsError(f"The yaml file {args.dataset}.yaml does not exist. Try adding a yaml file to the data via generate_data module")
     else:
         with open(str(yaml_file), 'r') as yaml_file:
-            yaml.safe_load(yaml_file)
+            general_data = yaml.safe_load(yaml_file)
 
     mp4_files = list(video_dir.rglob("*.mp4"))
     print("List of videos to be evaluated:")
     for file in mp4_files:
         print(str(file)) 
 
+    # CSV file
+    csv_path = DEFAULT_CSV_DIR / f'{args.name}.csv'
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+
+    count_videos = 1
     for file in mp4_files:
-        txt_file = "yolo_" + file.stem + ".txt"
-        txt_path = DEFAULT_ANNOTATION_DIR / txt_file
-        print(f"Annotations will be saved in {txt_path}")
+        print("="*30 + f" EVALUATING VIDEO {count_videos}: {file.stem.upper()} " + "="*30 + "\n")
+        print(f"The annotation file used for {file} is {general_data['data'][str(file)]}")
 
 
-        predict_args = [
-            '--model_path', 'models/yolo26x.pt',
+        print(f"\nVideo Path: {file}")
+        evaluate_args = [
             '--video', str(file),
-            '--project', 'predict',
-            '--name', file.stem,
-            '--stream', 'False',
-            '--save', 'False',
-            '--save_txt', 'False',
-            '--show', 'False',   
-            '--txt-path', str(DEFAULT_ANNOTATION_DIR),
+            '--predictions', general_data['data'][str(file)],
+            '--draw', 'True',
+            '--show', 'True',   
+            '--csv', str(csv_path),
             '--point-d', '400', '1000', 
             '--point-u', '550', '600'   
         ]
-        lines_prediction.predict(predict_args)
+        zone_counter.count_zones(evaluate_args)
 
-        print("Annotations saved!!!\n\n")
+        count_videos += 1
 
-        if txt_path.exists():
-            general_data['data'][str(file)] = str(txt_path)
-        else:
-            raise FileExistsError(f"Couldn't create annotation file for this video {str(file)}")
+        # print("Annotations saved!!!\n\n")
+
+        # if txt_path.exists():
+        #     general_data['data'][str(file)] = str(txt_path)
+        # else:
+        #     raise FileExistsError(f"Couldn't create annotation file for this video {str(file)}")
         
-        print(f"Applying distortions to video {file}")
+        # print(f"Applying distortions to video {file}")
 
-        for distortion in distortions_str:
+        # for distortion in distortions_str:
 
-            distortion_video_name = file.stem + '_' + distortion
-            print('='*15 + distortion + '='*15)
+        #     distortion_video_name = file.stem + '_' + distortion
+        #     print('='*15 + distortion + '='*15)
             
-            distortion_args = [
-                "--video", str(file),
-                "--dest", str(DEFAULT_DISTORTION_DIR),
-                "--name", distortion_video_name,
-                "--distortion", distortion
-            ]
-            video_augmentation.transform(distortion_args)
+        #     distortion_args = [
+        #         "--video", str(file),
+        #         "--dest", str(DEFAULT_DISTORTION_DIR),
+        #         "--name", distortion_video_name,
+        #         "--distortion", distortion
+        #     ]
+        #     video_augmentation.transform(distortion_args)
             
-            distortion_path = DEFAULT_DISTORTION_DIR / f"{distortion_video_name}.mp4"
-            general_data['data'][str(distortion_path)] = str(txt_path)
+        #     distortion_path = DEFAULT_DISTORTION_DIR / f"{distortion_video_name}.mp4"
+        #     general_data['data'][str(distortion_path)] = str(txt_path)
 
 
-
-
-    with open(str(DEFAULT_DATA_DIR / f'data_{args.name}.yaml'), "w") as yaml_file:
-        yaml.dump(general_data, yaml_file, default_flow_style=False)
-
-    print("\n\n\nGenerated YAML:\n")
-    print(yaml.dump(general_data))
 
 
 if __name__ == '__main__':
-    generate()
+    evaluate()

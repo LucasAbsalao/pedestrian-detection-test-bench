@@ -72,7 +72,7 @@ def str2bool(v: str | bool) -> bool:
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
     
-def parse_args() -> argparse.Namespace:
+def parse_args(arg_list = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Count 'd' key presses when min zone < 3"
     )
@@ -80,7 +80,7 @@ def parse_args() -> argparse.Namespace:
         "--video",
         type=Path,
         required=True,
-        help="Video file to display."
+        help="Video file to display." 
     )
     parser.add_argument(
         "--predictions",
@@ -120,34 +120,10 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_CSV_FILE,
         help="Path to the csv file with all metrics obtained from this video"
     )
-    return parser.parse_args()
+    return parser.parse_args(arg_list)
 
-def calculate_la_recall(ground_truth : NDArray, predictions : NDArray, 
-              t_start : int, t_end : int, 
-              alpha : float, beta: float, 
-              minimum_weight: float, sampling : int = 1):
-    
-    if sampling != 1:
-        raise NotImplemented("Sampling different from one was not yet implemented")
-    
-    
-    t = np.arange(len(ground_truth), step=sampling)
-
-    if t_end == t_start:
-        delta = np.zeros_like(t, dtype=float)
-    else:
-        delta = (t - t_start) / (t_end - t_start)
-
-    
-    gt_mask = (ground_truth < 3).astype(int) # Only the true detection can be counted
-    s_delta = 1 - 1 / (1 + np.exp(-beta * (2*delta - 1)))*(1-minimum_weight)
-
-    larec = gt_mask * predictions * s_delta #* np.pow(alpha, -t)
-
-    return larec
-
-def count_zones():
-    args = parse_args()
+def count_zones(arg_list = None):
+    args = parse_args(arg_list)
     
     video_path = args.video.resolve()
     predictions_path = args.predictions.resolve()
@@ -225,14 +201,6 @@ def count_zones():
 
     # ------------------------------------- Generate Statistics -------------------------------------
 
-    tp = 0
-    fn = 0
-    fp = 0
-    tn = 0
-    fn_weighted = 0
-    tp_weighted = 0
-    w_recall_weights = [1,3,6]
-
     general_statistics = Stats(general = True)
     statistics_per_zone = {
         'red': Stats(),
@@ -286,7 +254,11 @@ def count_zones():
     video_duration = int(total_frames//fps)
     general_statistics.calculate_rfa(video_duration)
 
-    
+    print("\n" + "="*30 + " EVALUATION REPORT " + "="*30)
+    print(f"Elapsed Time: {end_time - initial_time}")
+    print(f"Total Frames Evaluated: {processed_frames}")
+
+
     print("-"*40 + " General Statistics " + "-"*40)
     print(general_statistics)
 
