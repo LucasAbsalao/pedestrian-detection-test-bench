@@ -151,7 +151,7 @@ class Stats:
         
         t = np.arange(len(ground_truth), step=self.sampling)
 
-        if t_end == t_start:
+        if t_end <= t_start:
             delta = np.zeros_like(t, dtype=float)
         else:
             delta = (t - t_start) / (t_end - t_start)

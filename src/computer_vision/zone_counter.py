@@ -21,11 +21,9 @@ ROOT_DIRECTORY = Path(__file__).resolve().parents[2]
 if str(ROOT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(ROOT_DIRECTORY))
 
-from computer_vision.lines_prediction import write_lines
+from utils.draw import write_lines, draw_bboxes_from_data
 
 DEFAULT_CSV_FILE = Path(__file__).resolve().parents[0] / "results.csv"
-
-ZONE_COLORS = [(0, 0, 255), (0, 150, 255), (0, 255, 0), (255, 0, 0)]
 
 
 def parse_predictions(txt_path: Path) -> dict:
@@ -50,16 +48,6 @@ def parse_predictions(txt_path: Path) -> dict:
                 predictions[current_frame].append((zone, bbox))
     return predictions
 
-
-def draw_bboxes(image, frame_data):
-    """Draw bounding boxes on the image colored by zone."""
-    for zone, bbox in frame_data:
-        x1, y1, x2, y2 = map(int, bbox)
-        color = ZONE_COLORS[min(zone, 3)]
-        cv2.rectangle(image, (x1, y1), (x2, y2), color=color, thickness=3)
-        label = f"Zone: {zone}"
-        cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-    return image
 
 def str2bool(v: str | bool) -> bool:
     """Auxiliar function for argparse to read a boolean value."""
@@ -176,7 +164,7 @@ def count_zones(arg_list = None):
         
         if args.draw:
             frame = write_lines(frame, point_d, point_u, w)
-            frame = draw_bboxes(frame, frame_data)
+            frame = draw_bboxes_from_data(frame, frame_data)
         
         # Display current metrics overlay
         cv2.putText(frame, f"Frame: {frame_idx}/{total_frames}", (20, 40), 
@@ -229,10 +217,10 @@ def count_zones(arg_list = None):
         if t_start!=-1 and t_end!=-1:
             break
 
-    alpha = 1
-    beta = 4
+    if t_start == -1 and t_end == -1:
+        print("There is no detection of a person in the ground truth")
+
     minimum_weight = 0.2
-    sampling = 1
     print(f"For this video the detection starts in frame {t_start} and finishes in frame {t_end}")
     
     class_la_array = general_statistics.latency_array(ground_truth = ground_truth,
@@ -300,6 +288,7 @@ def count_zones(arg_list = None):
             writer = csv.DictWriter(csvf, fieldnames=list(results.keys()))
             writer.writerow(results)
     else:
+        print("Creating new csv results file")
         with open(csv_file_path, "w", newline='') as csvf:
             writer = csv.DictWriter(csvf, fieldnames=list(results.keys()))
             writer.writeheader()

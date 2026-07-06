@@ -11,7 +11,7 @@ t_end = 30
 
 delta = (t - t_start) / (t_end-t_start) 
 y1 = 1 + minimum_weight - (1 / (1 + np.exp(-beta * (delta - 1/2))))
-y2 = 1 + minimum_weight - 1 / (1 + np.exp(-beta * (2*delta - 1)))*(1-minimum_weight)
+y2 = 1 - 1 / (1 + np.exp(-beta * (2*delta - 1)))*(1-minimum_weight)
 
 fig, ax = plt.subplots(1,2)
 ax[0].plot(t,y1, color = 'red')

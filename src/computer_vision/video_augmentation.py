@@ -24,7 +24,7 @@ from pathlib import Path
 from tqdm import tqdm
 import torch
 
-from utils.transformations import gaussian_blur, gaussian_noise, fog
+from utils.transformations import gaussian_blur, gaussian_noise, fog, salt_and_pepper
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DEPTH_ANYTHING_DIR = ROOT_DIR / "Depth-Anything-V2"
@@ -35,7 +35,7 @@ if str(DEPTH_ANYTHING_DIR) not in sys.path:
 from metric_depth.depth_anything_v2.dpt import DepthAnythingV2
 
 DEFAULT_TRANSF_VIDEOS_DIR = ROOT_DIR / "videos" / "distortions"
-DEFAULT_DISTORTION_PARAMS_PATH = ROOT_DIR / 'src' / 'computer_vision' / 'config'
+DEFAULT_DISTORTION_CONFIG_PATH = ROOT_DIR / 'src' / 'computer_vision' / 'config'
 DEFAULT_MODELS_PATH = ROOT_DIR / 'src' / 'computer_vision' / 'models'
 
 def parse_args(arg_list=None) -> argparse.Namespace:
@@ -97,6 +97,9 @@ def apply_function(image : NDArray, distortion_str : str, parameters : dict, dep
     elif dist_name == 'gaussian_blur':
         new_image = gaussian_blur(image, **parameters.get('gaussian_blur', {}))
 
+    elif dist_name == 'salt_and_pepper':
+        new_image = salt_and_pepper(image, **parameters.get('salt_and_pepper', {}))
+
     elif dist_name == 'fog':
         if depth_model is None:
             raise ValueError("A depth model needs to be instanced to apply the fog distortion. Recommended: DepthAnything2")
@@ -124,9 +127,13 @@ def create_distortions_parameters():
             "minimum_distance": 10,
             "airlight": None,
             "per_channel_airlight": False 
+        },
+        "salt_and_pepper": {
+            "salt_prob": 0.03,
+            "pepper_prob": 0.03
         }
     }
-    yaml_path = DEFAULT_DISTORTION_PARAMS_PATH / 'parameters.yaml'
+    yaml_path = DEFAULT_DISTORTION_CONFIG_PATH / 'parameters.yaml'
 
     yaml_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -135,7 +142,7 @@ def create_distortions_parameters():
 
 
 def load_parameters() -> dict[str, Any]:
-    params_file = DEFAULT_DISTORTION_PARAMS_PATH / 'parameters.yaml'
+    params_file = DEFAULT_DISTORTION_CONFIG_PATH / 'parameters.yaml'
 
     if not params_file.exists():
         create_distortions_parameters()
@@ -149,7 +156,7 @@ def load_parameters() -> dict[str, Any]:
     return params
 
 def get_transformations():
-    return ['gaussian_noise', 'gaussian_blur', 'fog']
+    return ['gaussian_noise', 'gaussian_blur', 'fog', 'salt_and_pepper']
 
 def transform(arg_list=None):
     args = parse_args(arg_list)
@@ -182,7 +189,7 @@ def transform(arg_list=None):
     for i in tqdm(range(total_frames), desc=f"Applying {args.distortion} to video: "):
         if cap.isOpened():
             success, im0 = cap.read()
-
+            
             if not success:
                 break
             

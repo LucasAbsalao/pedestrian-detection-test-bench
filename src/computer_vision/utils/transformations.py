@@ -40,6 +40,33 @@ def gaussian_blur(image: NDArray, kernel_size: int = 11, stdev: float = 0.) -> N
     new_image = cv2.GaussianBlur(image, ksize=(kernel_size, kernel_size), sigmaX=stdev, sigmaY=stdev)
     return new_image.astype(image.dtype)
 
+def salt_and_pepper(image : NDArray, salt_prob : float, pepper_prob : float):
+    row, col = image.shape[0:2]
+    image_s_p = image.copy()
+    n_points = row * col
+
+    salt_points = int(salt_prob * n_points)
+
+    x_salt = np.random.randint(0, row, size=salt_points)
+    y_salt = np.random.randint(0, col, size=salt_points)
+
+
+    pepper_points = int(pepper_prob * n_points)
+
+    x_pepper = np.random.randint(0, row, size=pepper_points)
+    y_pepper = np.random.randint(0, col, size=pepper_points)
+
+
+    if len(image_s_p.shape) == 3:
+        image_s_p[x_salt, y_salt] = [255,255,255] 
+        image_s_p[x_pepper, y_pepper] = [0,0,0] 
+    else:
+        image_s_p[x_salt, y_salt] = 255
+        image_s_p[x_salt, y_salt] = 0
+
+    return image_s_p
+
+
 def magnitude_of_gradient(image: NDArray) -> NDArray:
     grad_x = cv2.Sobel(image, cv2.CV_64F, 1, 0)
     grad_y = cv2.Sobel(image, cv2.CV_64F, 0, 1)
