@@ -41,7 +41,7 @@ def str2bool(v: str | bool) -> bool:
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
-def parse_args(args_list=None) ->argparse.Namespace:
+def parse_args(args_list=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Prediction using a yolo model"
     )
