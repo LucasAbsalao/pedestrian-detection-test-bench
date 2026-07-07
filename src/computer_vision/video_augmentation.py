@@ -13,10 +13,8 @@ python3 video_augmentation.py --video /home/lucas/Documents/computer_vision/vide
 
 import cv2
 import numpy as np
-import typing
 from typing import Any
 from numpy.typing import NDArray
-import os
 import yaml
 import sys
 import argparse
@@ -61,7 +59,7 @@ def parse_args(arg_list=None) -> argparse.Namespace:
     parser.add_argument("--distortion",
                         type=str,
                         required=True,
-                        choices=['gaussian_noise', 'gaussian_blur', 'fog'],
+                        choices=['gaussian_noise', 'gaussian_blur', 'fog', 'salt_and_pepper'],
                         help="Distortion to be applied in the image"
     )
 

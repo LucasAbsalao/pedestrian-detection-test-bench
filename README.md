@@ -27,5 +27,4 @@ In the actual project, just frames with detection are saved.
 add sampling to the latency recall.
 
 
-Another function to save YAML file
-Print trapezoid after passing frame
+Exception wrapper to check if a point_data is None

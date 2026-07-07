@@ -85,32 +85,6 @@ def evaluate():
 
         count_videos += 1
 
-        # print("Annotations saved!!!\n\n")
-
-        # if txt_path.exists():
-        #     general_data['data'][str(file)] = str(txt_path)
-        # else:
-        #     raise FileExistsError(f"Couldn't create annotation file for this video {str(file)}")
-        
-        # print(f"Applying distortions to video {file}")
-
-        # for distortion in distortions_str:
-
-        #     distortion_video_name = file.stem + '_' + distortion
-        #     print('='*15 + distortion + '='*15)
-            
-        #     distortion_args = [
-        #         "--video", str(file),
-        #         "--dest", str(DEFAULT_DISTORTION_DIR),
-        #         "--name", distortion_video_name,
-        #         "--distortion", distortion
-        #     ]
-        #     video_augmentation.transform(distortion_args)
-            
-        #     distortion_path = DEFAULT_DISTORTION_DIR / f"{distortion_video_name}.mp4"
-        #     general_data['data'][str(distortion_path)] = str(txt_path)
-
-
 
 
 if __name__ == '__main__':
