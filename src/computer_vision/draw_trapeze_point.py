@@ -31,8 +31,8 @@ class TrapezoidMarker:
 		self.width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 		self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-		self.original_image = np.zeros((self.width, self.height), dtype=int)
-		self.display_image = self.original_image.copy()
+		self.original_image = None
+		self.display_image = None
 		self.next_frame = True
 
 		# State Variables
@@ -76,6 +76,11 @@ class TrapezoidMarker:
 		while True:
 			if self.next_frame:
 				succes, self.original_image = self.cap.read()
+				if not succes:
+					print("Video ended")
+					break
+
+				self.display_image = self.original_image.copy()
 				self.next_frame = False
 
 			cv2.imshow("Video Frame", self.display_image)
@@ -133,7 +138,6 @@ def mark_points(arg_list = None):
 	trapezoid_points = marker.run()
 	print("Trapezoid marking finished!!!")
 
-	
 	if trapezoid_points is not None:
 
 		yaml_path = args.config / f'{args.name}.yaml'
@@ -142,18 +146,20 @@ def mark_points(arg_list = None):
 		if yaml_path.exists():
 			# Extracting data from the actual yaml file
 			with open(yaml_path, 'r') as yaml_file:
-				data = yaml.safe_load(yaml_file)
+				data = yaml.safe_load(yaml_file) or {}
 
-			data[str(video_path)] = trapezoid_points.flatten()
+			data[str(video_path)] = trapezoid_points.flatten().tolist()
 			# Saving new version of this yaml file
 			with open(yaml_path, 'w') as yaml_file:
 				yaml.dump(data, yaml_file, default_flow_style=False)
 
 		else:
 			data = {}
-			data[str(video_path)] = trapezoid_points.flatten()
+			data[str(video_path)] = trapezoid_points.flatten().tolist()
 			with open(yaml_path, 'w') as yaml_file:
 				yaml.dump(data, yaml_file, default_flow_style=False)
+
+
 
 
 
