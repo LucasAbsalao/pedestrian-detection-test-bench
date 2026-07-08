@@ -7,6 +7,7 @@ import yaml
 from pathlib import Path
 
 import zone_counter
+import generate_data
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -70,6 +71,7 @@ def evaluate():
         print("="*30 + f" EVALUATING VIDEO {count_videos}: {file.stem.upper()} " + "="*30 + "\n")
         print(f"The annotation file used for {file} is {general_data['data'][str(file)]}")
 
+        bbox_points = general_data['bbox_points'][str(file)]
 
         print(f"\nVideo Path: {file}")
         evaluate_args = [
@@ -78,8 +80,8 @@ def evaluate():
             '--draw', 'True',
             '--show', 'True',   
             '--csv', str(csv_path),
-            '--point-d', '400', '1000', 
-            '--point-u', '550', '600'   
+            '--point-d', str(bbox_points[0]), str(bbox_points[1]), 
+            '--point-u', str(bbox_points[2]), str(bbox_points[3])  
         ]
         zone_counter.count_zones(evaluate_args)
 

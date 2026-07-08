@@ -95,8 +95,6 @@ def predict(file : Path, point_data : dict , args : argparse.Namespace):
     ]
     lines_prediction.predict(predict_args) 
 
-    print("Annotations saved!!!\n\n")
-
 def apply_distortion(file : Path, distortion : str, args : argparse.Namespace) -> Path:
     distortion_video_name = file.stem + '_' + distortion
 
@@ -142,7 +140,8 @@ def generate():
     general_data = {
         'name': args.name,
         'distortions': distortions_str,
-        'data': {}
+        'data': {},
+        'bbox_points':{}
     }
 
 
@@ -178,12 +177,13 @@ def generate():
 
             print("Annotations saved!!!\n\n")
 
-            if txt_path.exists():
-                general_data['data'][str(file)] = str(txt_path)
-            else:
-                raise FileExistsError(f"Couldn't create annotation file for this video {str(file)}")
+        if txt_path.exists():
+            general_data['data'][str(file)] = str(txt_path)
+            general_data['bbox_points'][str(file)] = list(point_data[str(file)])
+        else:
+            raise FileExistsError(f"Couldn't create annotation file for this video {str(file)}")
             
-            print(f"Applying distortions to video {file}")
+        print(f"Applying distortions to video {file}")
 
         for distortion in distortions_str:
 
@@ -192,6 +192,7 @@ def generate():
                                                args=args)
             
             general_data['data'][str(distortion_path)] = str(txt_path)
+            general_data['bbox_points'][str(distortion_path)] = list(point_data[str(file)])
 
 
     with open(str(DEFAULT_DATA_DIR / f'{args.name}.yaml'), "w") as yaml_file:

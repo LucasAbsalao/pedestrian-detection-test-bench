@@ -2,7 +2,7 @@
 To execute:
 python3 zone_counter.py \
     --video /home/lucas/Documents/computer_vision/videos/marcher_180.mp4 \
-    --predictions /home/lucas/Documents/computer_vision/annotations/yolo_marcher_180_n.txt \
+    --predictions /home/lucas/Documents/computer_vision/data/annotations/yolo_marcher_180_n.txt \
     --point-d 400 1000     --point-u 550 600
 '''
 
@@ -13,7 +13,6 @@ import argparse
 from pathlib import Path
 import sys
 import numpy as np
-from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 from benchmark.stats import Stats
 
@@ -150,6 +149,11 @@ def count_zones(arg_list = None):
     print("Hold or press 'd' when a person is inside the trapezoids, 'q' to quit")
     
     # ------------------------------------------ Main Loop ------------------------------------------
+    cv2.namedWindow("Zone Counter", cv2.WND_PROP_FULLSCREEN)
+
+    cv2.waitKey(30)
+    cv2.setWindowProperty("Zone Counter",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+
     initial_time = time.perf_counter()
     while cap.isOpened():
         success, frame = cap.read()

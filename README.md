@@ -28,3 +28,4 @@ add sampling to the latency recall.
 
 
 Exception wrapper to check if a point_data is None
+Reduce size of yaml file saving points and annotations files separatedly. Use a key to associate each file with it's points
