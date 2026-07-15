@@ -224,4 +224,6 @@ src/computer_vision/predict/
 # Ignored Extensions
 *.pt
 *.pth
+/src/computer_vision/experimentation/*.mp4
+/src/computer_vision/experimentation/*.avi
 /data/videos/**/*.mp4

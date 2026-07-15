@@ -9,7 +9,7 @@ ROOT_DIRECTORY = Path(__file__).resolve().parents[2]
 if str(ROOT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(ROOT_DIRECTORY))
 
-from computer_vision.zone_counter import parse_predictions, draw_bboxes
+from scripts.zone_counter import parse_predictions, draw_bboxes
 
 
 class TestZoneCounter(unittest.TestCase):

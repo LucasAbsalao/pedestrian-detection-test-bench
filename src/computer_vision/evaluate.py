@@ -6,7 +6,7 @@ import argparse
 import yaml
 from pathlib import Path
 
-import zone_counter
+import scripts.zone_counter as zone_counter
 import generate_data
 
 

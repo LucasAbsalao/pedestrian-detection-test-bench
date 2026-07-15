@@ -20,6 +20,10 @@ ROOT_DIRECTORY = Path(__file__).resolve().parents[2]
 if str(ROOT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(ROOT_DIRECTORY))
 
+SRC_DIR = Path(__file__).resolve().parents[0]
+if str(SRC_DIR) not in sys.path:
+    sys.path.append(str(SRC_DIR))
+    
 from utils.draw import write_lines, draw_bboxes_from_data
 
 DEFAULT_CSV_FILE = Path(__file__).resolve().parents[0] / "results.csv"
@@ -107,7 +111,7 @@ def parse_args(arg_list = None) -> argparse.Namespace:
         default=DEFAULT_CSV_FILE,
         help="Path to the csv file with all metrics obtained from this video"
     )
-    return parser.parse_args(arg_list)
+    return parser.parse_args(arg_list) 
 
 def count_zones(arg_list = None):
     args = parse_args(arg_list)

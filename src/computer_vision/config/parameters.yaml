@@ -7,7 +7,11 @@ gaussian_blur:
   stdev: 0.0
 gaussian_noise:
   mean: 0.0
-  stdev: 60.0
+  stdev: 10.0
+gaussian_noise_conv:
+  kernel_size: 9
+  mean: 0.0
+  stdev: 10
 salt_and_pepper:
-  salt_prob: 0.03
   pepper_prob: 0.03
+  salt_prob: 0.03

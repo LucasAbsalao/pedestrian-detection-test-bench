@@ -3,9 +3,9 @@ import argparse
 import yaml
 from pathlib import Path
 
-import lines_prediction
-import video_augmentation
-import draw_trapeze_points
+import scripts.lines_prediction as lines_prediction
+import scripts.video_augmentation as video_augmentation
+import scripts.draw_trapeze_points as draw_trapeze_points
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -108,7 +108,8 @@ def apply_distortion(file : Path, distortion : str, args : argparse.Namespace) -
         "--video", str(file),
         "--dest", str(DEFAULT_DISTORTION_DIR),
         "--name", distortion_video_name,
-        "--distortion", distortion
+        "--distortion", distortion,
+        "--codec", 'libx264' #The difference between libx264 and libx264_rawvideo is the time and a small quality loss (78.43 seconds against 161.35)
     ]
     video_augmentation.transform(distortion_args)
 
