@@ -16,7 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from benchmark.stats import Stats
 
-ROOT_DIRECTORY = Path(__file__).resolve().parents[2]
+ROOT_DIRECTORY = Path(__file__).resolve().parents[3]
 if str(ROOT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(ROOT_DIRECTORY))
 

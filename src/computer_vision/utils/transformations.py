@@ -76,6 +76,34 @@ def gaussian_noise_conv(image : NDArray,  mean: float, stdev: float, kernel_size
 
     return np.clip(new_image, 0, 255).astype(image.dtype)
 
+
+def salt_and_pepper_conv(image : NDArray, salt_prob : float, pepper_prob : float, kernel_size : int, sigma : float):
+    row, col = image.shape[0:2]
+    image_s_p = image.copy().astype(np.int16)
+    black_image = np.zeros(shape=image.shape, dtype=np.int16)
+    
+    n_points = row * col
+
+    salt_points = int(salt_prob * n_points)
+
+    x_salt = np.random.randint(0, row, size=salt_points)
+    y_salt = np.random.randint(0, col, size=salt_points)
+
+    pepper_points = int(pepper_prob * n_points)
+
+    x_pepper = np.random.randint(0, row, size=pepper_points)
+    y_pepper = np.random.randint(0, col, size=pepper_points)
+
+    kernel = cv2.getGaussianKernel(kernel_size, sigma = sigma)
+    if len(image_s_p.shape) == 3:
+        image_s_p[x_salt, y_salt] = [255,255,255] 
+        image_s_p[x_pepper, y_pepper] = [0,0,0] 
+    else:
+        image_s_p[x_salt, y_salt] = 255
+        image_s_p[x_salt, y_salt] = 0
+
+    return np.clip(image_s_p, 0, 255).astype(image.dtype)
+
 def magnitude_of_gradient(image: NDArray) -> NDArray:
     grad_x = cv2.Sobel(image, cv2.CV_64F, 1, 0)
     grad_y = cv2.Sobel(image, cv2.CV_64F, 0, 1)

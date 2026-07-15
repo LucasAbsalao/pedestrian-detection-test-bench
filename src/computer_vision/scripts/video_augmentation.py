@@ -31,9 +31,9 @@ import torch
 import subprocess
 import time
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
+ROOT_DIR = Path(__file__).resolve().parents[3]
 
-SRC_DIR = Path(__file__).resolve().parents[0]
+SRC_DIR = Path(__file__).resolve().parents[1]
 if str(SRC_DIR) not in sys.path:
     sys.path.append(str(SRC_DIR))
 

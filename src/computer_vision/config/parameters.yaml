@@ -11,7 +11,7 @@ gaussian_noise:
 gaussian_noise_conv:
   kernel_size: 9
   mean: 0.0
-  stdev: 10
+  stdev: 60
 salt_and_pepper:
   pepper_prob: 0.03
   salt_prob: 0.03
