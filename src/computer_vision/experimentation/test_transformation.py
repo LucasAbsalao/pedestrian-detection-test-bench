@@ -8,15 +8,16 @@ print(COMPUTER_VISION_DIR)
 if str(COMPUTER_VISION_DIR) not in sys.path:
     sys.path.insert(0, str(COMPUTER_VISION_DIR))
 
-from utils.transformations import salt_and_pepper, gaussian_noise_conv
+from utils.transformations import salt_and_pepper_conv, gaussian_noise_conv
 
-image = cv2.imread("/home/lucas/Documents/computer_vision/videos/black.png")
+image = cv2.imread("/home/lucas/Documents/computer_vision/videos/original_image_plat.png")
 if image is None:
     raise FileNotFoundError("Image not found")
 
 image = cv2.resize(image, (1366, 768), interpolation=cv2.INTER_NEAREST)
 
-image = gaussian_noise_conv(image, 0, 120, 9)
+image = salt_and_pepper_conv(image, 0.001, 0.001, 9)
+#image = gaussian_noise_conv(image, 0, 60, 9)
 
 cv2.namedWindow("Test", cv2.WINDOW_NORMAL)
 cv2.imshow("Test", image)

@@ -8,11 +8,10 @@ python3 video_augmentation.py --video /home/lucas/Documents/computer_vision/vide
 
 To add a new distortion you should modificate this three parts:
     - Import modules from transformation.utils
-    - Change apply_function to call this new function added with its parameters
-    - Change create distortion parameters to add this new function's parameters (You should delete the already existing config file parameters.yaml if it already exists)
+    - Change apply_function to call this new function with its parameters
+    - Change create distortion parameters to add this new function's parameters (You should delete the config file parameters.yaml if it already exists)
 
 TODO
-    Bruit Gaussien avec Lissage
     Occlusion
 '''
 
@@ -37,7 +36,7 @@ SRC_DIR = Path(__file__).resolve().parents[1]
 if str(SRC_DIR) not in sys.path:
     sys.path.append(str(SRC_DIR))
 
-from utils.transformations import gaussian_blur, gaussian_noise, fog, salt_and_pepper, gaussian_noise_conv
+from utils.transformations import gaussian_blur, gaussian_noise, fog, salt_and_pepper, gaussian_noise_conv, salt_and_pepper_conv
 
 DEPTH_ANYTHING_DIR = ROOT_DIR / "Depth-Anything-V2"
 
@@ -118,6 +117,9 @@ def apply_function(image : NDArray, distortion_str : str, parameters : dict, dep
     elif dist_name == 'salt_and_pepper':
         new_image = salt_and_pepper(image, **parameters.get('salt_and_pepper', {}))
 
+    elif dist_name == 'salt_and_pepper_conv':
+        new_image = salt_and_pepper_conv(image, **parameters.get('salt_and_pepper_conv', {}))
+
     elif dist_name == 'fog':
         if depth_model is None:
             raise ValueError("A depth model needs to be instanced to apply the fog distortion. Recommended: DepthAnything2")
@@ -154,6 +156,12 @@ def create_distortions_parameters():
         "salt_and_pepper": {
             "salt_prob": 0.03,
             "pepper_prob": 0.03
+        },
+        "salt_and_pepper_conv": {
+            "salt_prob": 0.0003,
+            "pepper_prob": 0.0003,
+            "kernel_size": 9,
+            "sigma": 1.23
         }
     }
     yaml_path = DEFAULT_DISTORTION_CONFIG_PATH / 'parameters.yaml'
@@ -179,7 +187,7 @@ def load_parameters() -> dict[str, Any]:
     return params
 
 def get_transformations():
-    return ['gaussian_noise', 'gaussian_noise_conv', 'gaussian_blur', 'fog', 'salt_and_pepper']
+    return ['gaussian_noise', 'gaussian_noise_conv', 'gaussian_blur', 'fog', 'salt_and_pepper', 'salt_and_pepper_conv']
 
 def transform_codec_libx264(temp_video_path:Path, final_video_path:Path):
     subprocess_commands = [

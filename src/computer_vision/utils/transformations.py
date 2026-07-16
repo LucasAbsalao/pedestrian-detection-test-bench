@@ -77,32 +77,62 @@ def gaussian_noise_conv(image : NDArray,  mean: float, stdev: float, kernel_size
     return np.clip(new_image, 0, 255).astype(image.dtype)
 
 
-def salt_and_pepper_conv(image : NDArray, salt_prob : float, pepper_prob : float, kernel_size : int, sigma : float):
-    row, col = image.shape[0:2]
-    image_s_p = image.copy().astype(np.int16)
-    black_image = np.zeros(shape=image.shape, dtype=np.int16)
-    
-    n_points = row * col
+def salt_and_pepper_conv(image : NDArray, salt_prob : float, pepper_prob : float, kernel_size : int, sigma : float | None = None):
 
+    if sigma == None:
+        sigma = (kernel_size // 2) / 3
+    # Gaussian kernel has floating point values. Some values will be higher than 255 or lower than 0, so float32 is necessary
+    image_s_p = image.copy().astype(np.float32)
+    h, w = image_s_p.shape[0], image_s_p.shape[1]
+    n_points = h * w
+
+    is_color = len(image.shape) == 3
+
+    # Random Points
     salt_points = int(salt_prob * n_points)
 
-    x_salt = np.random.randint(0, row, size=salt_points)
-    y_salt = np.random.randint(0, col, size=salt_points)
+    x_salt = np.random.randint(0, h, size=salt_points)
+    y_salt = np.random.randint(0, w, size=salt_points)
 
     pepper_points = int(pepper_prob * n_points)
 
-    x_pepper = np.random.randint(0, row, size=pepper_points)
-    y_pepper = np.random.randint(0, col, size=pepper_points)
+    x_pepper = np.random.randint(0, h, size=pepper_points)
+    y_pepper = np.random.randint(0, w, size=pepper_points)
 
-    kernel = cv2.getGaussianKernel(kernel_size, sigma = sigma)
-    if len(image_s_p.shape) == 3:
-        image_s_p[x_salt, y_salt] = [255,255,255] 
-        image_s_p[x_pepper, y_pepper] = [0,0,0] 
-    else:
-        image_s_p[x_salt, y_salt] = 255
-        image_s_p[x_salt, y_salt] = 0
+    # Setting Gaussian Kernel
+    kernel = cv2.getGaussianKernel(ksize = kernel_size, sigma = sigma)
+    kernel = kernel @ kernel.T
+    
+    mid_down = kernel_size // 2
+    mid_up = kernel_size - mid_down
 
-    return np.clip(image_s_p, 0, 255).astype(image.dtype)
+    factor = 1 / kernel[mid_down,mid_down]
+    kernel = factor * kernel.astype(np.float32) * 255
+    
+    # Padding
+    pad_tuple = ((mid_down, mid_up), (mid_down,mid_up), (0,0)) if is_color else (mid_down, mid_up)
+    image_s_p = np.pad(image_s_p, pad_width=pad_tuple)
+
+    x_salt_pad = x_salt + mid_down
+    y_salt_pad = y_salt + mid_down
+    x_pepper_pad = x_pepper + mid_down
+    y_pepper_pad = y_pepper + mid_down
+
+    # Value to substitute
+    kernel = np.repeat(kernel[:,:,np.newaxis], 3, axis=2) if is_color else kernel
+
+    # Adding values to padded image in int16
+
+    # Salt Values
+    for xs, ys in zip(x_salt_pad, y_salt_pad):
+        image_s_p[xs-mid_down:xs+mid_up, ys-mid_down:ys+mid_up] += kernel
+
+    #Pepper Values
+    for xp, yp in zip(x_pepper_pad, y_pepper_pad):
+        # Pepper Values are substracted
+        image_s_p[xp-mid_down:xp+mid_up, yp-mid_down:yp+mid_up] -= kernel
+
+    return np.clip(image_s_p[mid_down:mid_down+h, mid_down:mid_down+w], 0, 255).astype(image.dtype) # clip to 0 to 255 limits and go back to initial dtype
 
 def magnitude_of_gradient(image: NDArray) -> NDArray:
     grad_x = cv2.Sobel(image, cv2.CV_64F, 1, 0)
