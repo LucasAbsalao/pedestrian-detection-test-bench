@@ -107,7 +107,7 @@ def salt_and_pepper_conv(image : NDArray, salt_prob : float, pepper_prob : float
     mid_up = kernel_size - mid_down
 
     factor = 1 / kernel[mid_down,mid_down]
-    kernel = factor * kernel.astype(np.float32) * 255
+    kernel = factor * kernel.astype(np.float32) * 20
     
     # Padding
     pad_tuple = ((mid_down, mid_up), (mid_down,mid_up), (0,0)) if is_color else (mid_down, mid_up)
@@ -133,6 +133,64 @@ def salt_and_pepper_conv(image : NDArray, salt_prob : float, pepper_prob : float
         image_s_p[xp-mid_down:xp+mid_up, yp-mid_down:yp+mid_up] -= kernel
 
     return np.clip(image_s_p[mid_down:mid_down+h, mid_down:mid_down+w], 0, 255).astype(image.dtype) # clip to 0 to 255 limits and go back to initial dtype
+
+
+def time_decaying_artifacts(image : NDArray, old_noise : NDArray | None, event_probability : float, decay_factor : float, kernel_size : int, kernel_factor : float, sigma : float | None = None):
+
+    if sigma == None:
+        sigma = (kernel_size // 2) / 3
+    # Gaussian kernel has floating point values. Some values will be higher than 255 or lower than 0, so float32 is necessary
+    image_s_p = image.copy().astype(np.float32)
+    h, w = image_s_p.shape[0], image_s_p.shape[1]
+
+    is_color = len(image.shape) == 3
+
+    if old_noise is None:
+        old_noise = np.zeros(image_s_p.shape, dtype = image_s_p.dtype)
+    # Diminishing old artifacts
+    elif image_s_p.shape == old_noise.shape:
+        old_noise = decay_factor*old_noise  
+        image_s_p -= old_noise
+    else:
+        raise IndexError("Old noise doesn't have the same size of the original image")
+
+    prob = np.random.random(1)[0]
+
+    if prob > event_probability:
+        print("Event didn't happen")
+        return np.clip(image_s_p, 0, 255).astype(image.dtype), old_noise
+    
+   
+    x_artifact = np.random.randint(0, h, size=1)[0]
+    y_artifact = np.random.randint(0, w, size=1)[0]
+
+    # Setting Gaussian Kernel
+    kernel = cv2.getGaussianKernel(ksize = kernel_size, sigma = sigma)
+    kernel = kernel @ kernel.T
+
+    mid_down = kernel_size // 2
+    mid_up = kernel_size - mid_down
+
+    factor = 1 / kernel[mid_down,mid_down]
+    kernel = factor * kernel.astype(np.float32) * kernel_factor
+    
+    # Padding
+    pad_tuple = ((mid_down, mid_up), (mid_down,mid_up), (0,0)) if is_color else (mid_down, mid_up)
+    image_s_p = np.pad(image_s_p, pad_width=pad_tuple)
+    noise = np.pad(old_noise, pad_width=pad_tuple)
+
+    x_artifact_pad = x_artifact + mid_down
+    y_artifact_pad = y_artifact + mid_down
+
+    # Value to substitute
+    kernel = np.repeat(kernel[:,:,np.newaxis], 3, axis=2) if is_color else kernel
+
+    # New event Values
+
+    image_s_p[x_artifact_pad-mid_down:x_artifact_pad+mid_up, y_artifact_pad-mid_down:y_artifact_pad+mid_up] -= kernel
+    noise[x_artifact_pad-mid_down:x_artifact_pad+mid_up, y_artifact_pad-mid_down:y_artifact_pad+mid_up] += kernel
+
+    return np.clip(image_s_p[mid_down:mid_down+h, mid_down:mid_down+w], 0, 255).astype(image.dtype), np.clip(noise[mid_down:mid_down+h, mid_down:mid_down+w], 0, 255).astype(image.dtype) # clip to 0 to 255 limits and go back to initial dtype
 
 def magnitude_of_gradient(image: NDArray) -> NDArray:
     grad_x = cv2.Sobel(image, cv2.CV_64F, 1, 0)

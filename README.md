@@ -1,4 +1,16 @@
 # UGE
+
+To adjust detections, it's recommended to use CVAT.
+How it works:
+- Create an account and use the local installation
+- Use sudo docker compose up -d to run cvat in localhost detached, i.e. It will be running on background
+- Open localhost on port 8080 (That's the default port for running but you can change it if needed)
+- Click in the + button, then in create new project, choose a name for this file and press in submit and open
+- Click on the new + button and go to create new task.
+- Give a name to your task and upload the video that you want to adjust. Then, press submit & open 
+
+
+
 docker build --build-arg DEV=true -t yolo:1.1 .
 
 X11

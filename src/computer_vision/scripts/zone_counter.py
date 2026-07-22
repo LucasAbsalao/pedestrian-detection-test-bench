@@ -155,7 +155,7 @@ def count_zones(arg_list = None):
     # ------------------------------------------ Main Loop ------------------------------------------
     cv2.namedWindow("Zone Counter", cv2.WND_PROP_FULLSCREEN)
 
-    cv2.waitKey(30)
+    cv2.waitKey(100)
     cv2.setWindowProperty("Zone Counter",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 
     initial_time = time.perf_counter()

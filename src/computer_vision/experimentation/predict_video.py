@@ -1,7 +1,7 @@
 '''
 
 To execute:
-python3 predict_video.py --model_path yolo26l.pt --video /app/videos/cad42.mp4 --name cad42_video_large --save_txt True --save True --show False 
+python3 predict_video.py --model_path yolo26x.pt --video /home/lucas/Documents/computer_vision/videos/chantier_1/GX010077.MP4 --name GX010077 --save True --save_txt True --show False > GX010077.txt
 
 
 '''
@@ -14,7 +14,7 @@ import argparse
 
 ROOT_DIRECTORY = Path(__file__).resolve().parents[2]
 
-DEFAULT_PROJECT_PATH = ROOT_DIRECTORY / "src" / "computer_vision" / "predict"
+DEFAULT_PROJECT_PATH = ROOT_DIRECTORY / "computer_vision" / "experimentation" / "predict"
 
 def str2bool(v: str | bool) -> bool:
     """Auxiliar function for argparse to read a boolean value."""
@@ -76,7 +76,7 @@ def parse_args() ->argparse.Namespace:
     parser.add_argument(
         "--save",
         type=str2bool,
-        default=True,
+        default=False,
         help="Saving the annotated files (images or video)"
     )
     parser.add_argument(
@@ -125,7 +125,7 @@ print("Model's parameters: ")
 print(yolo_kwargs)
 
 results = model(**yolo_kwargs)
-
+actual_frame = 0
 try:
     for result in results:
         pass

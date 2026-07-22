@@ -83,11 +83,11 @@ def predict(file : Path, point_data : dict , args : argparse.Namespace):
     predict_args = [
         '--model_path', args.model,
         '--video', str(file),
-        '--project', 'predict',
+        '--project', 'predict/annotation',
         '--name', file.stem,
         '--stream', 'False',
         '--save', 'False',
-        '--save_txt', 'False',
+        '--save_txt', 'True',
         '--show', 'False',   
         '--txt-path', str(DEFAULT_ANNOTATION_DIR),
         '--point-d', str(points_xyxy[0]), str(points_xyxy[1]), 
