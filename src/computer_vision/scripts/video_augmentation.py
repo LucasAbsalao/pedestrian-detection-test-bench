@@ -77,7 +77,7 @@ def parse_args(arg_list=None) -> argparse.Namespace:
     )
     parser.add_argument('--codec',
                         type=str,
-                        default='libx264',
+                        default='libx265',
                         help='Codec used to encode the video while saving')
     return parser.parse_args(arg_list)
 
@@ -189,13 +189,13 @@ def load_parameters() -> dict[str, Any]:
 def get_transformations():
     return ['gaussian_noise', 'gaussian_noise_conv', 'gaussian_blur', 'fog', 'salt_and_pepper', 'salt_and_pepper_conv']
 
-def transform_codec_libx264(temp_video_path:Path, final_video_path:Path):
+def transform_codec_libx265(temp_video_path:Path, final_video_path:Path):
     subprocess_commands = [
         'ffmpeg', 
         '-y', # Sobrescreve o arquivo final se ele já existir
         '-loglevel', 'error', # Esconde os textos chatos do ffmpeg, mostra só erros
         '-i', temp_video_path, 
-        '-vcodec', 'libx264', 
+        '-vcodec', 'libx265', 
 
         '-pix_fmt', 'yuv444p',
         '-crf', '17',
@@ -207,7 +207,7 @@ def transform_codec_libx264(temp_video_path:Path, final_video_path:Path):
     if temp_video_path.exists():
         os.remove(str(temp_video_path))
 
-def init_libx264_rawvideo(final_video_path : Path, width : int, height : int, fps : int):
+def init_libx265_rawvideo(final_video_path : Path, width : int, height : int, fps : int):
     comando_ffmpeg = [
         'ffmpeg',
         '-y',
@@ -224,7 +224,7 @@ def init_libx264_rawvideo(final_video_path : Path, width : int, height : int, fp
         '-color_trc', 'bt709',
         '-sws_flags', 'accurate_rnd+bitexact',
         
-        '-vcodec', 'libx264',
+        '-vcodec', 'libx265',
         '-crf', '17',
         '-pix_fmt', 'yuv444p',       
         str(final_video_path)
@@ -248,11 +248,11 @@ def transform(arg_list=None):
         dest_file = dest_folder / f"{args.name}.mp4"
 
     temp_file = dest_file.with_name(f"{video_path.stem}_{args.distortion}_temp.avi")
-    video_write_path = temp_file if args.codec == 'libx264' else dest_file
+    video_write_path = temp_file if args.codec == 'libx265' else dest_file
 
 
-    # if codec is libx264, we will first save in a codec without loss, FFV1, and then transform it to h264 via ffmpeg
-    codec = args.codec if args.codec != 'libx264' else 'FFV1' 
+    # if codec is libx265, we will first save in a codec without loss, FFV1, and then transform it to h265 via ffmpeg
+    codec = args.codec if args.codec != 'libx265' else 'FFV1' 
 
     cap = cv2.VideoCapture(str(video_path))
 
@@ -263,8 +263,8 @@ def transform(arg_list=None):
 
     print(f"Using codec {codec}")
 
-    if codec == 'libx264_rawvideo':
-        process = init_libx264_rawvideo(final_video_path=video_write_path, width=w, height=h, fps=fps)
+    if codec == 'libx265_rawvideo':
+        process = init_libx265_rawvideo(final_video_path=video_write_path, width=w, height=h, fps=fps)
     else:
         video_writer = cv2.VideoWriter(str(video_write_path), cv2.VideoWriter_fourcc(*codec), fps, (w,h))
 
@@ -282,7 +282,7 @@ def transform(arg_list=None):
             
             new_img = apply_function(image = im0, distortion_str = args.distortion, parameters = params, depth_model=model)
 
-            if codec == "libx264_rawvideo":
+            if codec == "libx265_rawvideo":
                 if process.stdin is not None:
                     process.stdin.write(new_img.tobytes())
                 else:
@@ -298,7 +298,7 @@ def transform(arg_list=None):
     
     cap.release()
 
-    if codec == 'libx264_rawvideo':
+    if codec == 'libx265_rawvideo':
         if process.stdin is not None:
             process.stdin.close() 
         else:
@@ -307,9 +307,9 @@ def transform(arg_list=None):
     else:       
         video_writer.release()
 
-    if args.codec == 'libx264':
-        print('Transforming to H264 (MP4 part 10)')
-        transform_codec_libx264(temp_video_path=video_write_path, final_video_path=dest_file)
+    if args.codec == 'libx265':
+        print('Transforming to H265')
+        transform_codec_libx265(temp_video_path=video_write_path, final_video_path=dest_file)
 
     end_time = time.perf_counter()
 

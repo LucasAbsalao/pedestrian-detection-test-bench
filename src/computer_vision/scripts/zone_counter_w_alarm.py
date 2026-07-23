@@ -1,9 +1,9 @@
 '''
 To execute:
-python3 zone_counter.py \
+python3 zone_counter_w_alarm.py \
     --video /home/lucas/Documents/computer_vision/videos/marcher_180.mp4 \
     --predictions /home/lucas/Documents/computer_vision/data/annotations/yolo_marcher_180_n.txt \
-    --point-d 400 1000     --point-u 550 600
+    --point-d 490 840     --point-u 627 656
 '''
 
 import time
@@ -14,6 +14,8 @@ from pathlib import Path
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import pyaudio
+import threading
 
 ROOT_DIRECTORY = Path(__file__).resolve().parents[3]
 if str(ROOT_DIRECTORY) not in sys.path:
@@ -24,9 +26,17 @@ if str(SRC_DIR) not in sys.path:
     sys.path.append(str(SRC_DIR))
     
 from utils.draw import write_lines, draw_bboxes_from_data
+from utils.audio_handler import AudioHandler
 from benchmark.stats import Stats
 
 DEFAULT_CSV_FILE = Path(__file__).resolve().parents[0] / "results.csv"
+
+WAVE_OUTPUT_PATH = ROOT_DIRECTORY / "calibrate" / "alarm.wav"
+
+CHUNK = 1024
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 44100
 
 
 def parse_predictions(txt_path: Path) -> dict:
@@ -94,6 +104,12 @@ def parse_args(arg_list = None) -> argparse.Namespace:
         help="Upper trapezoid point (x y)"
     )
     parser.add_argument(
+        "--show",
+        type=str2bool,
+        default=True,
+        help="Display the video with overlay"
+    )
+    parser.add_argument(
         "--draw",
         type=bool,
         default=False,
@@ -130,6 +146,14 @@ def count_zones(arg_list = None):
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    seconds = total_frames/fps
+
+    # Audio Handler
+    ah = AudioHandler(chunk=CHUNK,
+                      format=FORMAT,
+                      channels=CHANNELS,
+                      rate=RATE) 
     
     point_d = tuple(args.point_d)
     point_u = tuple(args.point_u)
@@ -151,6 +175,15 @@ def count_zones(arg_list = None):
 
     cv2.waitKey(100)
     cv2.setWindowProperty("Zone Counter",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+
+
+    start_event = threading.Event()
+    stop_event = threading.Event()
+
+    thread_audio = threading.Thread(target=ah.record_audio, args=(seconds,))
+    thread_audio.start()
+
+    start_event.set()
 
     initial_time = time.perf_counter()
     while cap.isOpened():
@@ -184,10 +217,45 @@ def count_zones(arg_list = None):
             
         frame_idx += 1
 
+    stop_event.set()
+    thread_audio.join()
+
+
+    ah.terminate()
+
     end_time = time.perf_counter()
 
     cap.release()
     cv2.destroyAllWindows()
+
+    # ------------------------------------- Get Audio Detection -------------------------------------
+    audio_data = ah.get_audio_stream_data()
+
+    frequency, t, dbs = ah.spectrogram(audio_data=audio_data,
+                                      seconds=seconds)
+
+    ah.save_audio(output_path=str(WAVE_OUTPUT_PATH.parent / "detection_audio.wav"))
+
+    ah.plot_spectrogram(frequency=frequency,
+                        time_stamps=t,
+                        spectrogram=dbs,
+                        filepath=str(WAVE_OUTPUT_PATH.parent / "spectrogram_detection.jpg"))
+
+    alarm_frequency = 5904.290909090909 # TODO
+
+    binary_detection = ah.get_binary_detection(audio_data=audio_data,
+                                                alarm_frequency=alarm_frequency,
+                                                amp_threshold=1,
+                                                interval=0.05,
+                                                seconds=seconds)
+
+    final_detection = ah.morph_closing(binary_detection=binary_detection,
+                                       struct_size=10)
+
+    plt.plot(final_detection, color='red')
+    plt.plot(ground_truth, color='blue')
+    plt.show()
+
 
     # ------------------------------------- Generate Statistics -------------------------------------
 

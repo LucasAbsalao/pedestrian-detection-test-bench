@@ -45,6 +45,23 @@ class AudioHandler:
 
         print("[AUDIO] * done recording")
 
+    def record_audio_async(self, start_event, stop_event):
+
+
+        start_event.wait()
+
+        print("[AUDIO] * recording")
+        self.frames = []
+
+        while not stop_event.is_set():
+            data = self.stream.read(self.chunk)
+            self.frames.append(data)
+
+        print("[AUDIO] * done recording")
+
+    def read_buffer(self):
+        return self.stream.read(self.chunk)
+
     def terminate(self):
         self.stream.stop_stream()
         self.stream.close()
@@ -139,3 +156,6 @@ class AudioHandler:
         closing_detection = binary_closing(binary_detection, structure=structuring_element, border_value=1).astype(int)
 
         return closing_detection
+
+    def time_interpolation(self, binary_detection, fps):
+        pass

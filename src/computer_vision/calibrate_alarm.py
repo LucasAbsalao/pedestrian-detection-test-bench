@@ -51,17 +51,27 @@ def check_exists(name:str, filepath:Path):
 
 def save_frequency_to_yaml(frequency, name:str, filepath:Path):
 
+    new_frequency = {
+        name: frequency
+    }
+    
     if check_exists(name=name, filepath=filepath):
         x = input("Do you want to change the previous alarm calibration? [y/n] ")
         if x.upper() != 'Y':
             return
-    new_frequency = {
-        name: frequency
-    }
+        else:
+            with open(str(filepath),'r') as yaml_file:
+                new_frequency = yaml.safe_load(yaml_file) or {}
 
-    filepath.parent.mkdir(parents=True, exist_ok=True)
-    with open(str(filepath), "a") as yaml_file:
-        yaml.safe_dump(new_frequency, yaml_file, default_flow_style=False)
+            new_frequency[name] = frequency
+
+            with open(str(filepath), "w") as yaml_file:
+                yaml.safe_dump(new_frequency, yaml_file, default_flow_style=False)
+
+    else:
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        with open(str(filepath), "a") as yaml_file:
+            yaml.safe_dump(new_frequency, yaml_file, default_flow_style=False)
 
 
 

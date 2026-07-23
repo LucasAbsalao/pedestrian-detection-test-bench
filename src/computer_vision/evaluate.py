@@ -1,13 +1,10 @@
 import numpy as np
-import cv2
-import os
 import sys
 import argparse
 import yaml
 from pathlib import Path
 
 import scripts.zone_counter as zone_counter
-import generate_data
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -78,7 +75,6 @@ def evaluate():
             '--video', str(file),
             '--predictions', general_data['data'][str(file)],
             '--draw', 'True',
-            '--show', 'True',   
             '--csv', str(csv_path),
             '--point-d', str(bbox_points[0]), str(bbox_points[1]), 
             '--point-u', str(bbox_points[2]), str(bbox_points[3])  
