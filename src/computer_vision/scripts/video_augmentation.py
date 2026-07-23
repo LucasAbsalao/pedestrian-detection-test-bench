@@ -51,7 +51,7 @@ DEFAULT_MODELS_PATH = ROOT_DIR / 'src' / 'computer_vision' / 'models'
 
 def parse_args(arg_list=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description='Applying a transofrmation in each frame of a video'
+        description='Applying a transformation in each frame of a video'
     )
 
     parser.add_argument("--video", 
@@ -78,7 +78,7 @@ def parse_args(arg_list=None) -> argparse.Namespace:
     parser.add_argument('--codec',
                         type=str,
                         default='libx264',
-                        help='Codec used to encode the video whiel saving')
+                        help='Codec used to encode the video while saving')
     return parser.parse_args(arg_list)
 
 def generate_depth_model():
@@ -182,7 +182,7 @@ def load_parameters() -> dict[str, Any]:
         params = yaml.safe_load(yaml_file)
 
     if not params:
-        raise FileNotFoundError("Couldn't parse yaml file named parameters.yaml with distortion's parameters. It could be empty or corrupted. Try running create_distortion_parameters before continue.")
+        raise ValueError("Couldn't parse yaml file named parameters.yaml with distortion's parameters. It could be empty or corrupted. Try running create_distortion_parameters before continue.")
     
     return params
 

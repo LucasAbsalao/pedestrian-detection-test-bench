@@ -18,7 +18,7 @@ class AudioHandler:
                  nperseg_factor : int = 100,
                  dbs : bool = True) -> None:
         
-        self.pyaudio = self.pyaudio.PyAudio()
+        self.pyaudio = pyaudio.PyAudio()
 
         self.stream = self.pyaudio.open(format=format,
                                    channels=channels,
@@ -34,6 +34,9 @@ class AudioHandler:
         
 
     def record_audio(self, seconds):
+
+        print("[AUDIO] * recording")
+
         self.frames = []
 
         for i in range(0, int(self.rate / self.chunk * seconds)):
@@ -99,34 +102,39 @@ class AudioHandler:
 
         return f, t, Sxx
 
-    def plot_spectrogram(self, f, t, Sxx, filepath:str):
-        plt.pcolormesh(t, f, Sxx)
+    def plot_spectrogram(self, frequency, time_stamps, spectrogram, filepath:str, show=True):
+        plt.pcolormesh(time_stamps, frequency, spectrogram)
         plt.ylabel('Frequency [dBS]')
         plt.xlabel('Time [sec]')
-        plt.savefig(filepath, bbox_inches='tight')
+        plt.savefig(filepath)
+        if show:
+            plt.show()
 
-    def detection_frequency(self, spectrogram, f):
+    def detection_frequency(self, spectrogram, frequency):
         frequence_with_max_amp = np.argmax(spectrogram, axis=0)
         f_idx = stats.mode(frequence_with_max_amp)[0]
-        return f[f_idx]
+        return frequency[f_idx]
     
-    def get_binary_detection(self, audio_data, alarm_frequency, amp_threshold, interval, seconds):
+    def get_binary_detection(self, audio_data, alarm_frequency, amp_threshold:float, interval:float, seconds:float):
 
         f, t, Sxx = self.spectrogram(audio_data=audio_data, seconds=seconds)
 
         inf_detection = (1.0-interval)*alarm_frequency
         sup_detection = (1.0+interval)*alarm_frequency
 
-        frequencies_idx = f >= inf_detection or f <= sup_detection
+
+        frequencies_idx_sup = f >= inf_detection 
+        frequencies_idx_inf = f <= sup_detection
+        frequencies_idx = frequencies_idx_inf & frequencies_idx_sup
 
         alarm_spectrogram = Sxx[frequencies_idx, :]
         max_amplitude_alarm_sxx = np.max(alarm_spectrogram, axis=0)
 
         binary_detection = max_amplitude_alarm_sxx > amp_threshold
 
-        return int(binary_detection)
+        return binary_detection.astype(int)
 
-    def morph_closing(self, binary_detection, struct_size):
+    def morph_closing(self, binary_detection, struct_size:int):
         structuring_element = np.ones(struct_size, dtype=int) # t = 10 * struct_size ms
         closing_detection = binary_closing(binary_detection, structure=structuring_element, border_value=1).astype(int)
 
