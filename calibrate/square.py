@@ -3,70 +3,61 @@ import numpy as np
 
 # Background
 def draw_background(width, height): 
-
-    tela = np.full((height, width, 3), (0, 250, 255), dtype=np.uint8)
-
-    return tela
+    background = np.full((height, width, 3), (0, 250, 255), dtype=np.uint8)
+    return background
 
 def draw_blue_white_rectangles(image, white_size, blue_size):
+    x1_square = (image.shape[1] - white_size) // 2
+    y1_square = (image.shape[0] - white_size) // 2
 
-    x1_quadrado = (image.shape[1] - white_size) // 2
-    y1_quadrado = (image.shape[0] - white_size) // 2
+    square_start_point = (x1_square, y1_square)
+    square_end_point = (x1_square + white_size, y1_square + white_size)
 
-    ponto_inicial_quadrado = (x1_quadrado, y1_quadrado)
-    ponto_final_quadrado = (x1_quadrado + white_size, y1_quadrado + white_size)
+    x1_blue = (image.shape[1] - blue_size) // 2
+    x2_blue = x1_blue + blue_size
 
+    blue_start_point = (x1_blue, y1_square)
+    blue_end_point = (x2_blue, y1_square + white_size)
 
-    x1_azul = (image.shape[1] - blue_size) // 2
-    x2_azul = x1_azul + blue_size
+    blue_color = (255, 0, 0)
+    cv2.rectangle(image, blue_start_point, blue_end_point, blue_color, -1)
 
-
-    ponto_inicial_azul = (x1_azul, y1_quadrado)
-    ponto_final_azul = (x2_azul, y1_quadrado + white_size)
-
-    cor_azul = (255, 0, 0)
-
-    cv2.rectangle(image, ponto_inicial_azul, ponto_final_azul, cor_azul, -1)
-
-    cor_branca = (255, 255, 255)
-    cv2.rectangle(image, ponto_inicial_quadrado, ponto_final_quadrado, cor_branca, -1)
+    white_color = (255, 255, 255)
+    cv2.rectangle(image, square_start_point, square_end_point, white_color, -1)
 
 def draw_horizontal_vertical_lines(image):
-    cor_vermelha = (0, 0, 255)
-    espessura_linha = 5
+    red_color = (0, 0, 255)
+    line_thickness = 5
 
-    meio_x = image.shape[1] // 2
-    ponto_inicial_vertical = (meio_x, 0)       # Ponto no topo da tela
-    ponto_final_vertical = (meio_x, image.shape[0])    # Ponto na base da tela
+    mid_x = image.shape[1] // 2
+    vertical_start_point = (mid_x, 0)
+    vertical_end_point = (mid_x, image.shape[0])
 
-    cv2.line(tela, ponto_inicial_vertical, ponto_final_vertical, cor_vermelha, espessura_linha)
+    cv2.line(image, vertical_start_point, vertical_end_point, red_color, line_thickness)
 
+    mid_y = image.shape[0] // 2
+    horizontal_start_point = (0, mid_y)
+    horizontal_end_point = (image.shape[1], mid_y)
 
-    meio_y = image.shape[0] // 2
-    ponto_inicial_horizontal = (0, meio_y)       # Ponto no canto esquerdo
-    ponto_final_horizontal = (image.shape[1], meio_y)   # Ponto no canto direito
-
-    cv2.line(tela, ponto_inicial_horizontal, ponto_final_horizontal, cor_vermelha, espessura_linha)
+    cv2.line(image, horizontal_start_point, horizontal_end_point, red_color, line_thickness)
 
 width = 5120
 height = 2160
 
-tela = draw_background(width, height)
+background = draw_background(width, height)
 
 white_size = 2080
 blue_width = 5040
 
-draw_blue_white_rectangles(tela, white_size, blue_width)
+draw_blue_white_rectangles(background, white_size, blue_width)
 
-draw_horizontal_vertical_lines(tela)
-
+draw_horizontal_vertical_lines(background)
 
 # Save Image
-nome_do_arquivo = f"quadrado_branco_com_fundo_azul_{width}_{height}.png" 
-sucesso = cv2.imwrite(nome_do_arquivo, tela)
+filename = f"white_square_with_blue_background_{width}_{height}.png"
+success = cv2.imwrite(filename, background)
 
-
-if sucesso:
-    print(f"Imagem '{nome_do_arquivo}' salva com sucesso no diretório atual!")
+if success:
+    print(f"Image '{filename}' saved successfully in current directory!")
 else:
-    print("Erro ao tentar salvar a imagem.")
+    print("Error saving image.")
