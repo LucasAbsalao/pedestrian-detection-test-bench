@@ -9,6 +9,7 @@ python3 zone_counter_w_alarm.py \
 import time
 import cv2
 import csv
+import yaml
 import argparse
 from pathlib import Path
 import sys
@@ -31,7 +32,8 @@ from benchmark.stats import Stats
 
 DEFAULT_CSV_FILE = Path(__file__).resolve().parents[0] / "results.csv"
 
-WAVE_OUTPUT_PATH = ROOT_DIRECTORY / "calibrate" / "alarm.wav"
+WAVE_OUTPUT_PATH = ROOT_DIRECTORY / "calibrate"
+ALARM_CONFIG_PATH = ROOT_DIRECTORY / "config" / "alarm.yaml"
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
@@ -61,6 +63,15 @@ def parse_predictions(txt_path: Path) -> dict:
                 predictions[current_frame].append((zone, bbox))
     return predictions
 
+def get_alarm_frequency(alarm_name : str, filepath : Path):
+    with open(filepath, "r") as yaml_file:
+        data_alarm = yaml.safe_load(yaml_file) or {}
+
+    if data_alarm is not None:
+        if alarm_name in list(data_alarm.keys()):
+            return data_alarm[alarm_name]
+
+    return None
 
 def str2bool(v: str | bool) -> bool:
     """Auxiliar function for argparse to read a boolean value."""
@@ -104,12 +115,6 @@ def parse_args(arg_list = None) -> argparse.Namespace:
         help="Upper trapezoid point (x y)"
     )
     parser.add_argument(
-        "--show",
-        type=str2bool,
-        default=True,
-        help="Display the video with overlay"
-    )
-    parser.add_argument(
         "--draw",
         type=bool,
         default=False,
@@ -121,7 +126,20 @@ def parse_args(arg_list = None) -> argparse.Namespace:
         default=DEFAULT_CSV_FILE,
         help="Path to the csv file with all metrics obtained from this video"
     )
+    parser.add_argument(
+        "--alarm",
+        type=str,
+        required=True,
+        help="Name of the alarm. This will be used to search for the alarm detection frequency."
+    )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=ALARM_CONFIG_PATH
+        help="PAth to file with alarm frequencies."
+    )
     return parser.parse_args(arg_list) 
+
 
 def count_zones(arg_list = None):
     args = parse_args(arg_list)
@@ -147,7 +165,7 @@ def count_zones(arg_list = None):
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    seconds = total_frames/fps
+    video_seconds = total_frames/fps
 
     # Audio Handler
     ah = AudioHandler(chunk=CHUNK,
@@ -180,7 +198,7 @@ def count_zones(arg_list = None):
     start_event = threading.Event()
     stop_event = threading.Event()
 
-    thread_audio = threading.Thread(target=ah.record_audio, args=(seconds,))
+    thread_audio = threading.Thread(target=ah.record_audio_async, args=(start_event, stop_event))
     thread_audio.start()
 
     start_event.set()
@@ -220,10 +238,11 @@ def count_zones(arg_list = None):
     stop_event.set()
     thread_audio.join()
 
+    end_time = time.perf_counter()
+
 
     ah.terminate()
 
-    end_time = time.perf_counter()
 
     cap.release()
     cv2.destroyAllWindows()
@@ -231,17 +250,22 @@ def count_zones(arg_list = None):
     # ------------------------------------- Get Audio Detection -------------------------------------
     audio_data = ah.get_audio_stream_data()
 
+    seconds = len(audio_data) / RATE
+
     frequency, t, dbs = ah.spectrogram(audio_data=audio_data,
                                       seconds=seconds)
 
-    ah.save_audio(output_path=str(WAVE_OUTPUT_PATH.parent / "detection_audio.wav"))
+    ah.save_audio(output_path=str(WAVE_OUTPUT_PATH / "detection_audio.wav"))
 
     ah.plot_spectrogram(frequency=frequency,
                         time_stamps=t,
                         spectrogram=dbs,
-                        filepath=str(WAVE_OUTPUT_PATH.parent / "spectrogram_detection.jpg"))
+                        filepath=str(WAVE_OUTPUT_PATH / "spectrogram_detection.jpg"))
 
-    alarm_frequency = 5904.290909090909 # TODO
+    alarm_frequency = get_alarm_frequency(args.alarm, args.config)
+
+    if alarm_frequency is None:
+        raise RuntimeError("Could not get alarm frequency.")
 
     binary_detection = ah.get_binary_detection(audio_data=audio_data,
                                                 alarm_frequency=alarm_frequency,
@@ -313,7 +337,8 @@ def count_zones(arg_list = None):
     general_statistics.calculate_rfa(video_duration)
 
     print("\n" + "="*30 + " EVALUATION REPORT " + "="*30)
-    print(f"Elapsed Time: {end_time - initial_time}")
+    print(f"Original Video Duration (seconds): {video_seconds}")
+    print(f"Elapsed Time (seconds): {end_time - initial_time}")
     print(f"Total Frames Evaluated: {processed_frames}")
 
 

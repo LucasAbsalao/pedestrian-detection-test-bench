@@ -3,6 +3,7 @@ import wave
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
+import time
 from pathlib import Path
 from scipy import signal
 from scipy import stats
@@ -50,6 +51,8 @@ class AudioHandler:
 
         start_event.wait()
 
+        start_time = time.perf_counter()
+
         print("[AUDIO] * recording")
         self.frames = []
 
@@ -57,7 +60,10 @@ class AudioHandler:
             data = self.stream.read(self.chunk)
             self.frames.append(data)
 
+        end_time = time.perf_counter()
         print("[AUDIO] * done recording")
+
+        print(end_time - start_time)
 
     def read_buffer(self):
         return self.stream.read(self.chunk)
