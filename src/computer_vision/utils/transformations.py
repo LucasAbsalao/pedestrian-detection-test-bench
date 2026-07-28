@@ -232,3 +232,34 @@ def resize(image: NDArray,
     else:
         new_image = image.copy()
     return new_image
+
+def crop(image : NDArray,
+         proportion : tuple[int,int] | float):
+    
+    height, width = image.shape[0], image.shape[1]
+
+    if isinstance(proportion, tuple):
+        target_ratio = proportion[0]/proportion[1]
+    else:
+        target_ratio = proportion
+
+
+    current_ratio = width/height
+
+    print(f"Transforming from proportion {current_ratio} to {target_ratio}")
+
+    if target_ratio>current_ratio:
+        new_height = int(width / target_ratio)
+        remove = width - new_height
+        offset = remove//2
+
+        new_image = image[offset:new_height+offset, :]
+    else:
+
+        new_width = int(height * target_ratio)
+        remove = width - new_width
+        offset = remove//2
+
+        new_image = image[:, offset:new_width+offset]
+
+    return new_image

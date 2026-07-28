@@ -318,21 +318,24 @@ def count_zones(arg_list = None):
 
     minimum_weight = general_statistics.minimum_weight
     binary_ground_truth = (ground_truth < 3).astype(int)
-    
+
+    close_detection_gaps = 10 # # Corresponds to how many frames the system can ignore to consider a single detection extract
+
+    time_stamps = general_statistics.get_detection_duration(ground_truth=binary_ground_truth,
+                                                            closing_se_size=close_detection_gaps)
+                                                            
     class_la_array = general_statistics.latency_array(ground_truth = binary_ground_truth,
                                                       predictions = detected,
-                                                      t_start = t_start,
-                                                      t_end = t_end)
+                                                      time_stamps = time_stamps)
     
     la_recall = general_statistics.calculate_latency_recall(ground_truth = binary_ground_truth,
-                                                                  predictions = detected,
-                                                                  t_start = t_start,
-                                                                  t_end = t_end)
+                                                            predictions = detected,
+                                                            closing_structure_size=close_detection_gaps)
     
 
     plt.plot(class_la_array)
     plt.title("Latency Recall Evaluation")
-    plt.vlines([t_start, t_end], 0, 1 + minimum_weight, linestyles='dashed')
+    plt.vlines(time_stamps, 0, 1 + minimum_weight, linestyles='dashed')
     plt.show()
     
     video_duration = int(total_frames//fps)
@@ -368,7 +371,8 @@ def count_zones(arg_list = None):
         'Name': str(video_path).split('/')[-1],
         'Accuracy': general_statistics.calculate_accuracy(),
         'Precision': general_statistics.calculate_precision(),
-        'Recall':general_statistics.calculate_recall(),
+        'Recall': general_statistics.calculate_recall(),
+        'F1 Score': general_statistics.calculate_f1_score(),
         'Latency Recall': general_statistics.la_recall,
         'Weighted Recall': general_statistics.calculate_weighted_recall(),
         'P_miss': general_statistics.calculate_pmiss(),

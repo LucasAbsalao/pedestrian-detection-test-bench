@@ -8,13 +8,16 @@ print(COMPUTER_VISION_DIR)
 if str(COMPUTER_VISION_DIR) not in sys.path:
     sys.path.insert(0, str(COMPUTER_VISION_DIR))
 
-from utils.transformations import salt_and_pepper_conv, gaussian_noise_conv, time_decaying_artifacts
+from utils.transformations import salt_and_pepper_conv, gaussian_noise_conv, time_decaying_artifacts, crop, resize
 
 image = cv2.imread("/home/lucas/Documents/computer_vision/videos/original_image_plat.png")
 if image is None:
     raise FileNotFoundError("Image not found")
 
-image = cv2.resize(image, (1366, 768), interpolation=cv2.INTER_NEAREST)
+#image = crop(image, (5120,3840))
+image = resize(image=image, width=5120, height=2160)
+
+print(image.shape)
 
 last_image, noise = time_decaying_artifacts(image=image,
                                     old_noise=None,
@@ -25,7 +28,6 @@ last_image, noise = time_decaying_artifacts(image=image,
                                     sigma=10
                                     )
 
-print(last_image)
 cv2.namedWindow("Test", cv2.WINDOW_NORMAL)
 cv2.imshow("Test", last_image)
 cv2.waitKey(100)
@@ -36,18 +38,16 @@ cv2.setWindowProperty("Test",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 
 while True:
     
-    cv2.imshow("Test", last_image)
     key = 0xFF & cv2.waitKey(0)
 
     if key == ord('d'):
         last_image, noise = time_decaying_artifacts(image=image,
-                                            old_noise=noise,
-                                            event_probability=0.1,
-                                            decay_factor=1.0,
-                                            kernel_size=121,
-                                            kernel_factor=100,
-                                            sigma=30
-                                            )
+                                                    old_noise=noise,
+                                                    event_probability=0.1,
+                                                    decay_factor=1.0,
+                                                    kernel_size=121,
+                                                    kernel_factor=100,
+                                                    sigma=30)
         print("passou")
         pass
     elif key == ord('q'):
