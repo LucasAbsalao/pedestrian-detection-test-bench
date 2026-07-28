@@ -102,6 +102,14 @@ class Stats:
             return self.tp / (self.tp + self.fn)
         else:
             return 0.0
+
+    def calculate_f1_score(self) -> float:
+        recall = self.calculate_recall()
+        precision = self.calculate_precision()
+        if precision+recall>0:
+            return (2*precision*recall) / precision + recall
+        else:
+            return 0.0
         
     
     def calculate_weighted_recall(self) -> float:
@@ -171,24 +179,20 @@ class Stats:
 
         return timestamps
 
-    def latency_array(self, ground_truth : NDArray, predictions : NDArray, 
-                            t_start : int, t_end : int):
+    def latency_array(self, ground_truth : NDArray, predictions : NDArray, time_stamps : list):
     
         if self.sampling != 1:
             raise NotImplemented("Sampling different from one was not yet implemented")
-        
-        time_stamps = self.get_detection_duration(ground_truth=ground_truth, closing_se_size=10)
 
         t = np.arange(len(ground_truth), step=self.sampling)
 
-        if not time_stamps:
-            delta = np.zeros_like(t, dtype=float)
-        else:
+        delta = np.zeros_like(t, dtype=float)
+        if time_stamps:
             count = 0
             for time in t:
-                if time > time_stamps[count][1]:
+                if time > time_stamps[count][1] and count<len(time_stamps)-1:
                     count+=1
-                delta = (t - time_stamps[count][0]) / (time_stamps[count][1] - time_stamps[count][0])
+                delta[time] = (time - time_stamps[count][0]) / (time_stamps[count][1] - time_stamps[count][0])
         
     
         s_delta = 1 - 1 / (1 + np.exp(-self.beta * (2*delta - 1)))*(1-self.minimum_weight)
@@ -198,13 +202,15 @@ class Stats:
         return larec
     
     def calculate_latency_recall(self, ground_truth : NDArray, predictions : NDArray, 
-                                 t_start : int, t_end : int) -> float:
+                                 closing_structure_size : int = 10) -> float:
         
         if self.general_purpose:
+            time_stamps = self.get_detection_duration(ground_truth=ground_truth, closing_se_size=closing_structure_size)
+
             la_rec = self.latency_array(ground_truth=ground_truth,
                                     predictions = predictions,
-                                    t_start=t_start,
-                                    t_end=t_end)
+                                    time_stamps=time_stamps          
+            )
             
             positive_la_recall = la_rec[la_rec>0]
             avg_la_recall = np.mean(positive_la_recall).astype(float) if positive_la_recall.size>0 else 0
@@ -224,6 +230,7 @@ class Stats:
         metrics = f"Accuracy:                               {self.calculate_accuracy()*100:.2f}% (How many detections were right)\n" + \
                   f"Precision:                              {self.calculate_precision()*100:.2f}% (How reliable the detections were)\n" + \
                   f"Recall:                                 {self.calculate_recall()*100:.2f}% (How many actual pedestrians were caught)\n" + \
+                  f"F1 Score:                               {self.calculate_f1_score()*100:.2f}% (Overall balance between detecting pedestrians and avoiding false alarms)\n" + \
                   f"Miss Probability:                       {self.calculate_pmiss()*100:.2f}% (Missed Detection probability)\n"
     
         if self.general_purpose:
