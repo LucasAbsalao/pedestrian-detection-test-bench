@@ -43,3 +43,5 @@ add sampling to the latency recall.
 * Reduce size of yaml file saving points and annotations files separatedly. Use a key to associate each file with it's points
 * Put np nan to recall where there is no positive occurence
 * Yaml functions
+* morphological closing just in the end
+* The amplitude needs to be the mean of detection amplitude

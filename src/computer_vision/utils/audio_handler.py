@@ -63,7 +63,13 @@ class AudioHandler:
         end_time = time.perf_counter()
         print("[AUDIO] * done recording")
 
-        print(end_time - start_time)
+        print("[AUDIO] Start Time: ", start_time)
+        print("[AUDIO] End Time: ", end_time)
+        print("[AUDIO] Audio Duration: ", end_time - start_time)
+
+        self.record_start_time = start_time
+        self.record_end_time = end_time
+        self.record_duration = end_time - start_time
 
     def read_buffer(self):
         return self.stream.read(self.chunk)
@@ -133,10 +139,33 @@ class AudioHandler:
         if show:
             plt.show()
 
-    def detection_frequency(self, spectrogram, frequency):
+    def detection_frequency(self, spectrogram, frequency, frames_delay:int=20):
+
         frequence_with_max_amp = np.argmax(spectrogram, axis=0)
+
         f_idx = stats.mode(frequence_with_max_amp)[0]
-        return frequency[f_idx]
+
+        alarm_detection = frequence_with_max_amp == f_idx
+        alarm_detection = alarm_detection[frames_delay:] # Small delay to initialize audio sensor
+
+        alarm_frequency_amplitudes = spectrogram[f_idx,frames_delay:]
+
+        amplitude = np.min(alarm_frequency_amplitudes[alarm_detection])
+
+        time_axis = np.arange(20, spectrogram.shape[1])
+        plt.scatter(time_axis[alarm_detection], 
+                    alarm_frequency_amplitudes[alarm_detection], 
+                    color='red', label='Alarm', s=15)
+    
+        plt.scatter(time_axis[~alarm_detection], 
+                    alarm_frequency_amplitudes[~alarm_detection], 
+                    color='blue', label='Noise', s=15)
+
+        plt.hlines(amplitude, 0, len(time_axis), linestyle='dashed', color='black', label=f'Min Amp Threshold')
+        plt.title("Detecting amplitude threshold")
+        plt.show()
+
+        return frequency[f_idx], amplitude
     
     def get_binary_detection(self, audio_data, alarm_frequency, amp_threshold:float, interval:float, seconds:float):
 
@@ -151,6 +180,18 @@ class AudioHandler:
         frequencies_idx = frequencies_idx_inf & frequencies_idx_sup
 
         alarm_spectrogram = Sxx[frequencies_idx, :]
+
+        plt.subplot(2,1,1)
+        max_amplitude = np.max(alarm_spectrogram, axis=0)
+        plt.title("max_amplitude")
+        plt.plot(max_amplitude)
+    
+        plt.subplot(2,1,2)
+        mean_amplitude = np.mean(alarm_spectrogram, axis=0)
+        plt.plot(mean_amplitude)
+        plt.title("mean_amplitude")
+        plt.show()
+
         max_amplitude_alarm_sxx = np.max(alarm_spectrogram, axis=0)
 
         binary_detection = max_amplitude_alarm_sxx > amp_threshold
@@ -163,5 +204,29 @@ class AudioHandler:
 
         return closing_detection
 
-    def time_interpolation(self, binary_detection, fps):
-        pass
+    def valid_video_frames(self, video_time_array):        
+        frames_after_audio_begin = video_time_array > self.record_start_time
+        frames_before_audio_finish = video_time_array < self.record_end_time
+        valid_frames = frames_after_audio_begin &  frames_before_audio_finish
+
+        return np.arange(len(video_time_array))[valid_frames]
+
+    def time_interpolation(self, video_time_array, binary_detection):
+        print(video_time_array)
+        video_audio_b_detection = np.zeros(video_time_array.shape, dtype=int)
+        
+        valid_frames = self.valid_video_frames(video_time_array=video_time_array)
+        print("Valid frames: ", valid_frames)
+
+        second_per_detection_unit = self.record_duration / len(binary_detection)
+
+        for frame in valid_frames:
+            frame_time = video_time_array[frame] - video_time_array[0]
+            print("Frame time: ", frame_time)
+            print("second per detection unit: ", second_per_detection_unit)
+            idx_detection = int(frame_time / second_per_detection_unit) + 1
+            video_audio_b_detection[frame] = binary_detection[idx_detection]
+
+        return video_audio_b_detection
+
+            

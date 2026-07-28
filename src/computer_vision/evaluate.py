@@ -49,7 +49,7 @@ def evaluate():
     yaml_file = yaml_file.resolve()
 
     if not yaml_file.exists():
-        raise FileExistsError(f"The yaml file {args.dataset}.yaml does not exist. Try adding a yaml file to the data via generate_data module")
+        raise FileNotFoundError(f"The yaml file {args.dataset}.yaml does not exist. Try adding a yaml file to the data via generate_data module")
     else:
         with open(str(yaml_file), 'r') as yaml_file:
             general_data = yaml.safe_load(yaml_file)

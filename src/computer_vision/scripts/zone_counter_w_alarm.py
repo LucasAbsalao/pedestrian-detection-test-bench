@@ -3,7 +3,8 @@ To execute:
 python3 zone_counter_w_alarm.py \
     --video /home/lucas/Documents/computer_vision/videos/marcher_180.mp4 \
     --predictions /home/lucas/Documents/computer_vision/data/annotations/yolo_marcher_180_n.txt \
-    --point-d 490 840     --point-u 627 656
+    --point-d 490 840     --point-u 627 656 \
+    --alarm blaxtair
 '''
 
 import time
@@ -33,7 +34,7 @@ from benchmark.stats import Stats
 DEFAULT_CSV_FILE = Path(__file__).resolve().parents[0] / "results.csv"
 
 WAVE_OUTPUT_PATH = ROOT_DIRECTORY / "calibrate"
-ALARM_CONFIG_PATH = ROOT_DIRECTORY / "config" / "alarm.yaml"
+ALARM_CONFIG_PATH = SRC_DIR / "config" / "alarm.yaml"
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
@@ -64,14 +65,16 @@ def parse_predictions(txt_path: Path) -> dict:
     return predictions
 
 def get_alarm_frequency(alarm_name : str, filepath : Path):
-    with open(filepath, "r") as yaml_file:
-        data_alarm = yaml.safe_load(yaml_file) or {}
+    if filepath.exists():
+        with open(filepath, "r") as yaml_file:
+            data_alarm = yaml.safe_load(yaml_file) or {}
+        if data_alarm:
+            if alarm_name in list(data_alarm.keys()):
+                print("Alarm found: ")
+                print(data_alarm[alarm_name])
+                return data_alarm[alarm_name]['frequency'], data_alarm[alarm_name]['amplitude']
 
-    if data_alarm is not None:
-        if alarm_name in list(data_alarm.keys()):
-            return data_alarm[alarm_name]
-
-    return None
+    return None, None
 
 def str2bool(v: str | bool) -> bool:
     """Auxiliar function for argparse to read a boolean value."""
@@ -135,7 +138,7 @@ def parse_args(arg_list = None) -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=ALARM_CONFIG_PATH
+        default=ALARM_CONFIG_PATH,
         help="PAth to file with alarm frequencies."
     )
     return parser.parse_args(arg_list) 
@@ -182,6 +185,7 @@ def count_zones(arg_list = None):
     # Vectors for storing detections and ground truths
     ground_truth = np.zeros((total_frames), dtype=int)
     detected = np.zeros((total_frames,), dtype=int)
+    time_stamps = np.zeros((total_frames,), dtype=float)
     
     frame_idx = 0
     
@@ -226,6 +230,7 @@ def count_zones(arg_list = None):
                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
         cv2.imshow('Zone Counter', frame)
+        time_stamps[frame_idx] = time.perf_counter()
         key = cv2.waitKey(delay) & 0xFF
         
         if key == ord('q'):
@@ -262,27 +267,36 @@ def count_zones(arg_list = None):
                         spectrogram=dbs,
                         filepath=str(WAVE_OUTPUT_PATH / "spectrogram_detection.jpg"))
 
-    alarm_frequency = get_alarm_frequency(args.alarm, args.config)
+    alarm_frequency, amplitude_threshold = get_alarm_frequency(args.alarm, args.config)
 
     if alarm_frequency is None:
-        raise RuntimeError("Could not get alarm frequency.")
+        raise RuntimeError("Could not get alarm frequency from yaml file.")
+    if amplitude_threshold is None:
+        raise RuntimeError("Could not get alarm amplitude threshold from yaml file.")
 
     binary_detection = ah.get_binary_detection(audio_data=audio_data,
                                                 alarm_frequency=alarm_frequency,
-                                                amp_threshold=1,
+                                                amp_threshold=amplitude_threshold,
                                                 interval=0.05,
                                                 seconds=seconds)
 
     final_detection = ah.morph_closing(binary_detection=binary_detection,
-                                       struct_size=10)
+                                       struct_size=20)
 
+    detected_audio_video = ah.time_interpolation(time_stamps, final_detection)
+
+    plt.subplot(1,2,1)
     plt.plot(final_detection, color='red')
-    plt.plot(ground_truth, color='blue')
+
+    plt.subplot(1,2,2)
+    plt.plot(detected_audio_video, color='red')
+    plt.plot(3-ground_truth, color='blue')
     plt.show()
 
 
     # ------------------------------------- Generate Statistics -------------------------------------
 
+    detected = detected_audio_video
     general_statistics = Stats(general = True)
     statistics_per_zone = {
         'red': Stats(),
@@ -300,29 +314,17 @@ def count_zones(arg_list = None):
     processed_frames = general_statistics.total_evaluations()
     assert processed_frames == total_frames, "Problem retrieving information from the video -> processed frames are different than total frames"
 
-    t_start, t_end = -1, -1
-    for i in range(total_frames):
-        if ground_truth[i] < 3 and t_start == -1:
-            t_start = i
-
-        if ground_truth[total_frames - i - 1] < 3 and t_end == -1:
-            t_end = total_frames - i - 1
-
-        if t_start!=-1 and t_end!=-1:
-            break
-
-    if t_start == -1 and t_end == -1:
-        print("There is no detection of a person in the ground truth")
-
-    minimum_weight = 0.2
-    print(f"For this video the detection starts in frame {t_start} and finishes in frame {t_end}")
     
-    class_la_array = general_statistics.latency_array(ground_truth = ground_truth,
+
+    minimum_weight = general_statistics.minimum_weight
+    binary_ground_truth = (ground_truth < 3).astype(int)
+    
+    class_la_array = general_statistics.latency_array(ground_truth = binary_ground_truth,
                                                       predictions = detected,
                                                       t_start = t_start,
                                                       t_end = t_end)
     
-    la_recall = general_statistics.calculate_latency_recall(ground_truth = ground_truth,
+    la_recall = general_statistics.calculate_latency_recall(ground_truth = binary_ground_truth,
                                                                   predictions = detected,
                                                                   t_start = t_start,
                                                                   t_end = t_end)
@@ -339,6 +341,8 @@ def count_zones(arg_list = None):
     print("\n" + "="*30 + " EVALUATION REPORT " + "="*30)
     print(f"Original Video Duration (seconds): {video_seconds}")
     print(f"Elapsed Time (seconds): {end_time - initial_time}")
+    print(f"Video started at {initial_time}")
+    print(f"Video finishes at {end_time}")
     print(f"Total Frames Evaluated: {processed_frames}")
 
 

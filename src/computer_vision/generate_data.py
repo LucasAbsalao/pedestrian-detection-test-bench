@@ -76,7 +76,7 @@ def predict(file : Path, point_data : dict , args : argparse.Namespace):
         add_points_to_file(file, args.points)
         point_data = get_points_from_yaml(args.points) or {}
         if point_data is None:
-            raise FileExistsError("Couldn't create yaml file")
+            raise FileNotFoundError("Couldn't create yaml file")
     
     points_xyxy = point_data[str(file)]
 
@@ -156,7 +156,7 @@ def generate():
 
         point_data = get_points_from_yaml(args.points)
         if point_data is None:
-            raise FileExistsError("Couldn't create point yaml file")
+            raise FileNotFoundError("Couldn't create point yaml file")
 
     
     for file in mp4_files:
@@ -182,7 +182,7 @@ def generate():
             general_data['data'][str(file)] = str(txt_path)
             general_data['bbox_points'][str(file)] = list(point_data[str(file)])
         else:
-            raise FileExistsError(f"Couldn't create annotation file for this video {str(file)}")
+            raise FileNotFoundError(f"Couldn't create annotation file for this video {str(file)}")
             
         print(f"Applying distortions to video {file}")
 

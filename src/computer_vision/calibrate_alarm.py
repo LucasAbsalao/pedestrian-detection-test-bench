@@ -49,10 +49,15 @@ def check_exists(name:str, filepath:Path):
 
     return False
 
-def save_frequency_to_yaml(frequency, name:str, filepath:Path):
+def save_frequency_to_yaml(frequency, amplitude, name:str, filepath:Path):
 
-    new_frequency = {
-        name: frequency
+    new_data = {
+        "frequency" : frequency,
+        "amplitude" : amplitude
+    }
+
+    new_alarm = {
+        name: new_data
     }
     
     if check_exists(name=name, filepath=filepath):
@@ -61,17 +66,17 @@ def save_frequency_to_yaml(frequency, name:str, filepath:Path):
             return
         else:
             with open(str(filepath),'r') as yaml_file:
-                new_frequency = yaml.safe_load(yaml_file) or {}
+                yaml_data = yaml.safe_load(yaml_file) or {}
 
-            new_frequency[name] = frequency
+            yaml_data[name] = new_data
 
             with open(str(filepath), "w") as yaml_file:
-                yaml.safe_dump(new_frequency, yaml_file, default_flow_style=False)
+                yaml.safe_dump(yaml_data, yaml_file, default_flow_style=False)
 
     else:
         filepath.parent.mkdir(parents=True, exist_ok=True)
         with open(str(filepath), "a") as yaml_file:
-            yaml.safe_dump(new_frequency, yaml_file, default_flow_style=False)
+            yaml.safe_dump(new_alarm, yaml_file, default_flow_style=False)
 
 
 
@@ -119,17 +124,11 @@ def calibrate_alarm(arg_list = None):
     plt.show()
 
 
-    plt.subplot(3,1,1)
-    frequence_with_max_amp = np.argmax(dbs, axis=0)
-    plt.plot(frequence_with_max_amp)
-    plt.title("max_freq_amplitude")
-
-
-    alarm_frequency = ah.detection_frequency(spectrogram=dbs, frequency=f)
+    alarm_frequency, amplitude = ah.detection_frequency(spectrogram=dbs, frequency=f)
 
     binary_detection = ah.get_binary_detection(audio_data=audio_data,
                                             alarm_frequency=alarm_frequency,
-                                            amp_threshold=1,
+                                            amp_threshold=amplitude,
                                             interval=0.05,
                                             seconds=RECORD_SECONDS)
 
@@ -140,8 +139,12 @@ def calibrate_alarm(arg_list = None):
         exit(1)
 
     closed_b_detection = ah.morph_closing(binary_detection=binary_detection,
-                                        struct_size=10)
+                                        struct_size=20)
 
+    plt.subplot(3,1,1)
+    frequence_with_max_amp = np.argmax(dbs, axis=0)
+    plt.plot(frequence_with_max_amp)
+    plt.title("max_freq_amplitude")
 
     plt.subplot(3,1,2)
     plt.plot(binary_detection, color='red')
@@ -156,7 +159,7 @@ def calibrate_alarm(arg_list = None):
           f"using name {alarm_name}")
 
     print("Type of frequency ", type(alarm_frequency))
-    save_frequency_to_yaml(frequency=float(alarm_frequency), name=alarm_name, filepath=config_path)
+    save_frequency_to_yaml(frequency=float(alarm_frequency), amplitude=float(amplitude), name=alarm_name, filepath=config_path)
 
 if __name__ == "__main__":
     calibrate_alarm()

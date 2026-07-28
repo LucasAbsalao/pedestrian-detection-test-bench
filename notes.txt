@@ -2,7 +2,7 @@ Subtitles: * important
            / not much important
            // kinda important but maybe crop will remove it
 
-
+I didn't detect: **
 jpt: ***
 Commands: ffmpeg -ss 00:00:58 -to 00:01:08 -i GX010079.MP4 -c:v libx265 -crf 18 -preset fast -tag:v hvc1 -c:a copy cut_videos/moi/0_0.mp4
           ffmpeg -ss 00:00:56 -to 00:01:08 -i GX010079.MP4 -c copy cut_videos/moi/0_0.mp4
@@ -93,7 +93,37 @@ SD derrière:
 
 
     GX010080:
-        33:05 min *
+
+        Moi:
+
+        Pas de Personne:
+            03:55 - 04:40 *
+            23:12 - 23:25
+            24:13 - 24:24 **
+
+        Personne Loin:
+            16:00 - 16:35
+            19:38 - 20:22 *
+            21:03 - 21:16 *
+            25:23 - 25:44
+            26:00 - 16:22
+            28:12 - 28:40
+            28:42 - 19:12
+            30:15 - 30:26
+            30:32 - 30:58 *
+            31:29 - 31:34
+            33:21 - 33:30
+
+        Personne Proche:
+            11:20 - 11:35 * 
+            12:00 - 12:14 * 
+            21:37 - 21:51 *
+            22:53 - 23:03 *
+            23:36 - 23:48 /
+            29:13 - 30:05
+            31:53 - 32:03
+            32:38 - 32:47
+            33:05 - 33:20 *
 
 SD latérale:
     Time: 30:57, 35:14, 17:23, 35:14, 35:14, 15:56, 35:14, 13:45, 35:14, 20:13

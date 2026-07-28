@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.typing import NDArray
-
+from scipy.ndimage import binary_closing
 
 class Stats:
     def __init__(self, general: bool = False) -> None:
@@ -141,26 +141,59 @@ class Stats:
         fa_term = self.calculate_pfa() if self.r_fa == 0 else self.r_fa
 
         return self.calculate_pmiss() + 0.005 * fa_term
-    
+
+    def get_detection_duration(self, ground_truth : NDArray, closing_se_size:int):
+        timestamps = []
+        
+        structure = np.ones((closing_se_size,), dtype=int)
+
+        closed_mask = binary_closing(ground_truth, structure=structure, border_value=0).astype(int)
+
+        detected = False
+        start_frame = 0
+        end_frame = 0
+
+        for i, detection in enumerate(closed_mask):
+            if detection == 1 and not detected:
+                detected = True
+                start_frame = i
+
+            if detection == 1 and detected:
+                end_frame = i
+
+            if detection == 0 and detected:
+                if start_frame != end_frame:
+                    timestamps.append([start_frame, end_frame]) 
+                    detected = False
+
+        if detected and start_frame != end_frame:
+            timestamps.append([start_frame, end_frame])
+
+        return timestamps
+
     def latency_array(self, ground_truth : NDArray, predictions : NDArray, 
                             t_start : int, t_end : int):
     
         if self.sampling != 1:
             raise NotImplemented("Sampling different from one was not yet implemented")
         
-        
+        time_stamps = self.get_detection_duration(ground_truth=ground_truth, closing_se_size=10)
+
         t = np.arange(len(ground_truth), step=self.sampling)
 
-        if t_end <= t_start:
+        if not time_stamps:
             delta = np.zeros_like(t, dtype=float)
         else:
-            delta = (t - t_start) / (t_end - t_start)
-
+            count = 0
+            for time in t:
+                if time > time_stamps[count][1]:
+                    count+=1
+                delta = (t - time_stamps[count][0]) / (time_stamps[count][1] - time_stamps[count][0])
         
-        gt_mask = (ground_truth < 3).astype(int) # Only the true detection can be counted
+    
         s_delta = 1 - 1 / (1 + np.exp(-self.beta * (2*delta - 1)))*(1-self.minimum_weight)
 
-        larec = gt_mask * predictions * s_delta #* np.pow(self.alpha, -t)
+        larec = ground_truth * predictions * s_delta #* np.pow(self.alpha, -t)
 
         return larec
     
