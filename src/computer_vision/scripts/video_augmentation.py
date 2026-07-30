@@ -10,6 +10,7 @@ To add a new distortion you should modificate this three parts:
     - Import modules from transformation.utils
     - Change apply_function to call this new function with its parameters
     - Change create distortion parameters to add this new function's parameters (You should delete the config file parameters.yaml if it already exists)
+    - Add its name in the get_transformation function
 
 TODO
     Occlusion
@@ -36,7 +37,7 @@ SRC_DIR = Path(__file__).resolve().parents[1]
 if str(SRC_DIR) not in sys.path:
     sys.path.append(str(SRC_DIR))
 
-from utils.transformations import gaussian_blur, gaussian_noise, fog, salt_and_pepper, gaussian_noise_conv, salt_and_pepper_conv
+from utils.transformations import gaussian_blur, gaussian_noise, fog, salt_and_pepper, gaussian_noise_conv, salt_and_pepper_conv, time_decaying_artifacts
 
 DEPTH_ANYTHING_DIR = ROOT_DIR / "Depth-Anything-V2"
 
@@ -127,6 +128,14 @@ def apply_function(image : NDArray, distortion_str : str, parameters : dict, dep
         new_image = fog(image = image, depth_map = depth, **parameters.get('fog', {}))
         new_image = np.clip(new_image,0,255).astype(np.uint8)
 
+    elif dist_name == 'rain':
+        new_image, old_noise = time_decaying_artifacts(image, **parameters.get('rain', {}))
+        parameters['rain']['old_noise'] = old_noise
+
+    elif dist_name == 'dirt':
+        new_image, old_noise = time_decaying_artifacts(image, **parameters.get('dirt', {}))
+        parameters['dirt']['old_noise'] = old_noise
+
     else:
         raise ValueError(f"There is no distortion function implemented for {dist_name}")
 
@@ -162,6 +171,24 @@ def create_distortions_parameters():
             "pepper_prob": 0.0003,
             "kernel_size": 9,
             "sigma": 1.23
+        },
+        "rain": {
+            "old_noise": None,
+            "event_probability": 0.2,
+            "decay_factor": 0.98,
+            "kernel_size": 201,
+            "kernel_factor": 150,
+            "sigma": 39,
+            "additive": True
+        },
+        "dirt": {
+            "old_noise": None,
+            "event_probability": 0.033,
+            "decay_factor": 1.0,
+            "kernel_size": 151,
+            "kernel_factor": 160,
+            "sigma": 29,
+            "additive": False
         }
     }
     yaml_path = DEFAULT_DISTORTION_CONFIG_PATH / 'parameters.yaml'
@@ -187,7 +214,14 @@ def load_parameters() -> dict[str, Any]:
     return params
 
 def get_transformations():
-    return ['gaussian_noise', 'gaussian_noise_conv', 'gaussian_blur', 'fog', 'salt_and_pepper', 'salt_and_pepper_conv']
+    return ['gaussian_noise', 
+            'gaussian_noise_conv', 
+            'gaussian_blur',
+            'fog', 
+            'salt_and_pepper', 
+            'salt_and_pepper_conv',
+            'rain',
+            'dirt']
 
 def transform_codec_libx265(temp_video_path:Path, final_video_path:Path):
     subprocess_commands = [
@@ -255,7 +289,6 @@ def transform(arg_list=None):
     codec = args.codec if args.codec != 'libx265' else 'FFV1' 
 
     cap = cv2.VideoCapture(str(video_path))
-
     assert cap.isOpened(), "Error reading file"
 
     w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
@@ -313,7 +346,7 @@ def transform(arg_list=None):
 
     end_time = time.perf_counter()
 
-    print(f"Time to apply the distortion {args.distortion} was {end_time - start_time} seconds")
+    print(f"Time to apply the {args.distortion} distortion was {end_time - start_time} seconds")
 
 
 if __name__ == "__main__":

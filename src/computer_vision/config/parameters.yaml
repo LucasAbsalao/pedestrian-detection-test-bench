@@ -1,3 +1,11 @@
+dirt:
+  additive: false
+  decay_factor: 1.0
+  event_probability: 0.033
+  kernel_factor: 160
+  kernel_size: 151
+  old_noise: null
+  sigma: 29
 fog:
   airlight: null
   minimum_distance: 10
@@ -12,6 +20,14 @@ gaussian_noise_conv:
   kernel_size: 9
   mean: 0.0
   stdev: 10
+rain:
+  additive: true
+  decay_factor: 0.98
+  event_probability: 0.2
+  kernel_factor: 150
+  kernel_size: 201
+  old_noise: null
+  sigma: 39
 salt_and_pepper:
   pepper_prob: 0.03
   salt_prob: 0.03

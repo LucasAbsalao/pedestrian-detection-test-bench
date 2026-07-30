@@ -160,7 +160,6 @@ def time_decaying_artifacts(image : NDArray, old_noise : NDArray | None, event_p
     prob = np.random.random(1)[0]
 
     if prob > event_probability:
-        print("Event didn't happen")
         return np.clip(image_s_p, 0, 255).astype(image.dtype), old_noise
     
    
