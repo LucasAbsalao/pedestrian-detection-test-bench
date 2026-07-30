@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.typing import NDArray
 from scipy.ndimage import binary_closing
+import math
 
 class Stats:
     def __init__(self, general: bool = False) -> None:
@@ -51,14 +52,14 @@ class Stats:
             self.alpha = 1
             self.beta = 4
             self.minimum_weight = 0.2
-            self.sampling = 1
+            self.sampling_la_recall = 1
             self.la_recall = 0.
     
     def set_latency_parameters(self, alpha : float, beta: float, minimum_weight : float, sampling : int):
         self.alpha = alpha
         self.beta = beta
         self.minimum_weight = minimum_weight
-        self.sampling = sampling
+        self.sampling_la_recall = sampling
 
     def update(self, predicted : bool, expected : bool, weight_idx : int | None = None) -> None:
         if predicted and expected:
@@ -157,25 +158,14 @@ class Stats:
 
         closed_mask = binary_closing(ground_truth, structure=structure, border_value=0).astype(int)
 
-        detected = False
-        start_frame = 0
-        end_frame = 0
+        padded = np.pad(closed_mask, (1, 1), mode='constant', constant_values=0)
 
-        for i, detection in enumerate(closed_mask):
-            if detection == 1 and not detected:
-                detected = True
-                start_frame = i
+        diffs = np.diff(padded)
 
-            if detection == 1 and detected:
-                end_frame = i
+        starts = np.where(diffs == 1)[0]
+        ends = np.where(diffs == -1)[0] - 1
 
-            if detection == 0 and detected:
-                if start_frame != end_frame:
-                    timestamps.append([start_frame, end_frame]) 
-                    detected = False
-
-        if detected and start_frame != end_frame:
-            timestamps.append([start_frame, end_frame])
+        timestamps = np.column_stack((starts, ends)).tolist()
 
         return timestamps
 
@@ -190,32 +180,42 @@ class Stats:
         frame_delays = []
         for start_frame, end_frame in time_stamps:
 
-            limit_sup = min(start_frame+window-1, end_frame)
-            for i in range(start_frame, limit_sup, 1):
-                if b_audio_detection == 1:
+            limit_sup = min(start_frame+window, len(b_video_detection))
+            for i in range(start_frame, limit_sup):
+                if b_audio_detection[i] == 1:
                     frame_delays.append(i-start_frame)
                     break
 
         return frame_delays
 
-    def get_first_idx_after_time(self, time):
-        pass
+    def get_first_idx_after_time(self, time:float, sampling_period:float):
+        idx = math.ceil(time / sampling_period)
+        return idx
+        
 
     def get_seconds_delay(self, b_video_detection : NDArray, frame_seconds : NDArray, audio_detection : NDArray, audio_duration : float, window : int, closing_se_size : int):
 
         time_stamps = self.get_detection_duration_in_frames(ground_truth=b_video_detection, closing_se_size=closing_se_size)
 
+        sampling_period_in_seconds = audio_duration / len(audio_detection)
+
         frame_delays_s = []
         for start_frame, end_frame in time_stamps:
 
-            limit_sup_frame = min(start_frame+window-1, end_frame)
+            limit_sup_frame = min(start_frame+window, len(frame_seconds)-1)
 
             limit_inf_seconds = frame_seconds[start_frame]
+            limit_inf_audio_idx = self.get_first_idx_after_time(limit_inf_seconds, sampling_period_in_seconds)
+
             limit_sup_seconds = frame_seconds[limit_sup_frame]
+            limit_sup_audio_idx = self.get_first_idx_after_time(limit_sup_seconds, sampling_period_in_seconds)
+
+            #Check if it can get bigger than the lengththe own audio detection
+            limit_sup_audio_idx = min(limit_sup_audio_idx, len(audio_detection))
             
-            for i in range(self.get_first_idx_after_time(limit_inf_seconds), self.get_first_idx_after_time(limit_sup_frame), 1):
-                if audio_detection == 1:
-                    frame_delays_s.append(i-start_frame)
+            for i in range(limit_inf_audio_idx, limit_sup_audio_idx):
+                if audio_detection[i] == 1:
+                    frame_delays_s.append(i*sampling_period_in_seconds - limit_inf_seconds)
                     break
 
         return frame_delays_s
@@ -223,10 +223,10 @@ class Stats:
 
     def latency_array(self, ground_truth : NDArray, predictions : NDArray, time_stamps : list):
     
-        if self.sampling != 1:
+        if self.sampling_la_recall != 1:
             raise NotImplemented("Sampling different from one was not yet implemented")
 
-        t = np.arange(len(ground_truth), step=self.sampling)
+        t = np.arange(len(ground_truth), step=self.sampling_la_recall)
 
         delta = np.zeros_like(t, dtype=float)
         if time_stamps:

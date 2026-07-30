@@ -46,10 +46,10 @@ add sampling to the latency recall.
 * morphological closing just in the end
 * The amplitude needs to be the mean of detection amplitude or first quartile OK
 * Points dictionary needs to be updated before detection in generate_data OK
-* Apply rain and dirty in distortions 
-* Average Delay
+* Apply rain and dirty in distortions OK
+* Average Delay 
 * Maybe some frames in the generator aren't being analysed
-* Median filter in the ground_truth
+* Morphological closing in the ground_truth
 * Apply new rain
 
 
@@ -57,3 +57,4 @@ La fumée et le document pour le PRE
 
 * Test erosion in detection
 * Test frame delay using an audio from the same computer 
+* Do I use a frame window even in the seconds delay detection?
