@@ -14,8 +14,7 @@ image = cv2.imread("/home/lucas/Documents/computer_vision/videos/original_image_
 if image is None:
     raise FileNotFoundError("Image not found")
 
-#image = crop(image, (5120,3840))
-image = resize(image=image, width=5120, height=2160)
+image = resize(image=image, width=1920, height=1080)
 
 print(image.shape)
 
@@ -25,7 +24,8 @@ last_image, noise = time_decaying_artifacts(image=image,
                                     decay_factor=0.9,
                                     kernel_size=11,
                                     kernel_factor=20,
-                                    sigma=10
+                                    sigma=10,
+                                    additive=True
                                     )
 
 cv2.namedWindow("Test", cv2.WINDOW_NORMAL)
@@ -39,15 +39,17 @@ cv2.setWindowProperty("Test",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 while True:
     
     key = 0xFF & cv2.waitKey(0)
+    cv2.imshow("Test", last_image)
 
     if key == ord('d'):
         last_image, noise = time_decaying_artifacts(image=image,
                                                     old_noise=noise,
-                                                    event_probability=0.1,
-                                                    decay_factor=1.0,
-                                                    kernel_size=121,
-                                                    kernel_factor=100,
-                                                    sigma=30)
+                                                    event_probability=0.8,
+                                                    decay_factor=0.93,
+                                                    kernel_size=201,
+                                                    kernel_factor=180,
+                                                    sigma=39,
+                                                    additive=True)
         print("passou")
         pass
     elif key == ord('q'):

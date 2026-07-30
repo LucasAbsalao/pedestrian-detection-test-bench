@@ -44,4 +44,15 @@ add sampling to the latency recall.
 * Put np nan to recall where there is no positive occurence
 * Yaml functions
 * morphological closing just in the end
-* The amplitude needs to be the mean of detection amplitude
+* The amplitude needs to be the mean of detection amplitude or first quartile OK
+* Points dictionary needs to be updated before detection in generate_data OK
+* Apply rain and dirty in distortions
+* Average Delay
+* Maybe some frames in the generator aren't being analysed
+* Median filter in the ground_truth
+
+
+La fumée et le document pour le PRE
+
+* Test erosion in detection
+* Test frame delay using an audio from the same computer 

@@ -135,7 +135,7 @@ def salt_and_pepper_conv(image : NDArray, salt_prob : float, pepper_prob : float
     return np.clip(image_s_p[mid_down:mid_down+h, mid_down:mid_down+w], 0, 255).astype(image.dtype) # clip to 0 to 255 limits and go back to initial dtype
 
 
-def time_decaying_artifacts(image : NDArray, old_noise : NDArray | None, event_probability : float, decay_factor : float, kernel_size : int, kernel_factor : float, sigma : float | None = None):
+def time_decaying_artifacts(image : NDArray, old_noise : NDArray | None, event_probability : float, additive : bool,  decay_factor : float, kernel_size : int, kernel_factor : float, sigma : float | None = None):
 
     if sigma == None:
         sigma = (kernel_size // 2) / 3
@@ -150,7 +150,10 @@ def time_decaying_artifacts(image : NDArray, old_noise : NDArray | None, event_p
     # Diminishing old artifacts
     elif image_s_p.shape == old_noise.shape:
         old_noise = decay_factor*old_noise  
-        image_s_p -= old_noise
+        if additive:
+            image_s_p += old_noise
+        else:
+            image_s_p -= old_noise
     else:
         raise IndexError("Old noise doesn't have the same size of the original image")
 
@@ -186,8 +189,11 @@ def time_decaying_artifacts(image : NDArray, old_noise : NDArray | None, event_p
     kernel = np.repeat(kernel[:,:,np.newaxis], 3, axis=2) if is_color else kernel
 
     # New event Values
+    if additive:
+        image_s_p[x_artifact_pad-mid_down:x_artifact_pad+mid_up, y_artifact_pad-mid_down:y_artifact_pad+mid_up] += kernel
+    else:
+        image_s_p[x_artifact_pad-mid_down:x_artifact_pad+mid_up, y_artifact_pad-mid_down:y_artifact_pad+mid_up] -= kernel
 
-    image_s_p[x_artifact_pad-mid_down:x_artifact_pad+mid_up, y_artifact_pad-mid_down:y_artifact_pad+mid_up] -= kernel
     noise[x_artifact_pad-mid_down:x_artifact_pad+mid_up, y_artifact_pad-mid_down:y_artifact_pad+mid_up] += kernel
 
     return np.clip(image_s_p[mid_down:mid_down+h, mid_down:mid_down+w], 0, 255).astype(image.dtype), np.clip(noise[mid_down:mid_down+h, mid_down:mid_down+w], 0, 255).astype(image.dtype) # clip to 0 to 255 limits and go back to initial dtype

@@ -1,7 +1,12 @@
 bbox_points:
+  /home/lucas/Documents/computer_vision/data/videos/GX010079_01_4.mp4:
+  - 425
+  - 2028
+  - 1244
+  - 653
   /home/lucas/Documents/computer_vision/data/videos/GoLive1.mp4:
-  - 487
-  - 571
+  - 492
+  - 575
   - 549
   - 441
   /home/lucas/Documents/computer_vision/data/videos/GoLive2.mp4:
@@ -9,34 +14,64 @@ bbox_points:
   - 559
   - 572
   - 439
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_fog.mp4:
+  - 425
+  - 2028
+  - 1244
+  - 653
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_blur.mp4:
+  - 425
+  - 2028
+  - 1244
+  - 653
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_noise.mp4:
+  - 425
+  - 2028
+  - 1244
+  - 653
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_noise_conv.mp4:
+  - 425
+  - 2028
+  - 1244
+  - 653
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_salt_and_pepper.mp4:
+  - 425
+  - 2028
+  - 1244
+  - 653
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_salt_and_pepper_conv.mp4:
+  - 425
+  - 2028
+  - 1244
+  - 653
   /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_fog.mp4:
-  - 487
-  - 571
+  - 492
+  - 575
   - 549
   - 441
   /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_gaussian_blur.mp4:
-  - 487
-  - 571
+  - 492
+  - 575
   - 549
   - 441
   /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_gaussian_noise.mp4:
-  - 487
-  - 571
+  - 492
+  - 575
   - 549
   - 441
   /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_gaussian_noise_conv.mp4:
-  - 487
-  - 571
+  - 492
+  - 575
   - 549
   - 441
   /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_salt_and_pepper.mp4:
-  - 487
-  - 571
+  - 492
+  - 575
   - 549
   - 441
   /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_salt_and_pepper_conv.mp4:
-  - 487
-  - 571
+  - 492
+  - 575
   - 549
   - 441
   /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_fog.mp4:
@@ -105,8 +140,15 @@ bbox_points:
   - 627
   - 656
 data:
+  /home/lucas/Documents/computer_vision/data/videos/GX010079_01_4.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
   /home/lucas/Documents/computer_vision/data/videos/GoLive1.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive1.txt
   /home/lucas/Documents/computer_vision/data/videos/GoLive2.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive2.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_fog.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_blur.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_noise.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_noise_conv.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_salt_and_pepper.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_salt_and_pepper_conv.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
   /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_fog.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive1.txt
   /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_gaussian_blur.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive1.txt
   /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_gaussian_noise.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive1.txt

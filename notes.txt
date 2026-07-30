@@ -128,3 +128,19 @@ SD derrière:
 SD latérale:
     Time: 30:57, 35:14, 17:23, 35:14, 35:14, 15:56, 35:14, 13:45, 35:14, 20:13
     Total:     4:34:24 t       4:30   4:24 min 
+
+
+
+3 Visite
+
+    SD derrière:
+        Time: 30:57 min, 33:05 min, 25:00 min, 28:49 min, 26:41 min, 23:29 min, 09:56 min, 29:53 min, 26:41 min, 30:57 min, 32:01 min, 33:05 min, 21:44 min
+        Total: 4:33:48 t 
+
+    SD latérale (droite):
+        Time: 25:37 min, 30:57 min, 28:48 min, 34:10 min, 33:05 min, 21:31 min, 33:05 min, 29:45 min, 34:10 min, 2:40min
+        Total: 4:33:48 t 
+
+    SD latérale (gauche):
+        Time: 25:37 min, 30:57 min, 28:48 min, 34:10 min, 33:05 min, 21:31 min, 33:05 min, 29:45 min, 34:10 min, 2:40min
+        Total: 4:33:48 t 

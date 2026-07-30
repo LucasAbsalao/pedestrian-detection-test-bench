@@ -47,8 +47,6 @@ class AudioHandler:
         print("[AUDIO] * done recording")
 
     def record_audio_async(self, start_event, stop_event):
-
-
         start_event.wait()
 
         start_time = time.perf_counter()
@@ -150,7 +148,7 @@ class AudioHandler:
 
         alarm_frequency_amplitudes = spectrogram[f_idx,frames_delay:]
 
-        amplitude = np.min(alarm_frequency_amplitudes[alarm_detection])
+        amplitude = np.quantile(alarm_frequency_amplitudes[alarm_detection], q=0.25)
 
         time_axis = np.arange(20, spectrogram.shape[1])
         plt.scatter(time_axis[alarm_detection], 

@@ -50,13 +50,13 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_points_from_yaml(points_file_path : Path) -> dict | None :
+def get_points_from_yaml(points_file_path : Path) -> dict :
     if points_file_path.exists():
         with open(str(points_file_path), 'r') as yaml_file:
             point_data = yaml.safe_load(yaml_file)
         return point_data 
     else:
-        return None
+        return {}
 
 
 def add_points_to_file(file : Path, yaml_path : Path):
@@ -150,15 +150,23 @@ def generate():
     point_data = get_points_from_yaml(args.points)
 
     # Create a point data dictionary if it doesnt exist
-    if point_data is None:
+    if not point_data:
         for file in mp4_files:
             add_points_to_file(file, args.points)
-
         point_data = get_points_from_yaml(args.points)
-        if point_data is None:
-            raise FileNotFoundError("Couldn't create point yaml file")
-
+    else:
+        file_missing = False
+        for file in mp4_files:
+            if str(file) not in point_data:
+                add_points_to_file(file, args.points)
+                file_missing = True
+        if file_missing:
+            point_data = get_points_from_yaml(args.points)
+                
+    if not point_data:
+        raise FileNotFoundError("Couldn't create point yaml file")
     
+
     for file in mp4_files:
             
         txt_file = "yolo_" + file.stem + ".txt"

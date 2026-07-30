@@ -1,10 +1,10 @@
 '''
 To execute:
 python3 zone_counter_w_alarm.py \
-    --video /home/lucas/Documents/computer_vision/videos/marcher_180.mp4 \
-    --predictions /home/lucas/Documents/computer_vision/data/annotations/yolo_marcher_180_n.txt \
-    --point-d 490 840     --point-u 627 656 \
-    --alarm blaxtair
+    --video /home/lucas/Documents/computer_vision/data/videos/GX010079_01_4.mp4 \
+    --predictions /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt \
+    --point-d 245 2028     --point-u 1244 653 \
+    --alarm blaxtair_real
 '''
 
 import time
