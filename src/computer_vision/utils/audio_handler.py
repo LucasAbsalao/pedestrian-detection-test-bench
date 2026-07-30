@@ -148,7 +148,7 @@ class AudioHandler:
 
         alarm_frequency_amplitudes = spectrogram[f_idx,frames_delay:]
 
-        amplitude = np.quantile(alarm_frequency_amplitudes[alarm_detection], q=0.25)
+        amplitude = np.quantile(alarm_frequency_amplitudes[alarm_detection], q=0.05)
 
         time_axis = np.arange(20, spectrogram.shape[1])
         plt.scatter(time_axis[alarm_detection], 
@@ -209,21 +209,25 @@ class AudioHandler:
 
         return np.arange(len(video_time_array))[valid_frames]
 
-    def time_interpolation(self, video_time_array, binary_detection):
+    def first_audio_data_after_time(self, audio_data:NDArray, time:float, period_in_seconds:float):
+        idx_detection = int(time / period_in_seconds) + 1
+        return audio_data[idx_detection]
+
+
+    def resample_detection(self, video_time_array, binary_detection):
         print(video_time_array)
         video_audio_b_detection = np.zeros(video_time_array.shape, dtype=int)
         
         valid_frames = self.valid_video_frames(video_time_array=video_time_array)
         print("Valid frames: ", valid_frames)
 
-        second_per_detection_unit = self.record_duration / len(binary_detection)
+        period = self.record_duration / len(binary_detection)
 
         for frame in valid_frames:
             frame_time = video_time_array[frame] - video_time_array[0]
             print("Frame time: ", frame_time)
-            print("second per detection unit: ", second_per_detection_unit)
-            idx_detection = int(frame_time / second_per_detection_unit) + 1
-            video_audio_b_detection[frame] = binary_detection[idx_detection]
+            print("second per detection unit: ", period)
+            video_audio_b_detection[frame] = self.first_audio_data_after_time(audio_data=binary_detection, time=frame_time, period_in_seconds=period)
 
         return video_audio_b_detection
 

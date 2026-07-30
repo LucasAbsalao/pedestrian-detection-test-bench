@@ -137,7 +137,7 @@ class Stats:
     
         return p_fa
     
-    def calculate_rfa(self, time:int) -> float:
+    def calculate_rfa(self, time:float) -> float:
         n_fa = self.fp
         hours = time/3600
 
@@ -150,7 +150,7 @@ class Stats:
 
         return self.calculate_pmiss() + 0.005 * fa_term
 
-    def get_detection_duration(self, ground_truth : NDArray, closing_se_size:int):
+    def get_detection_duration_in_frames(self, ground_truth : NDArray, closing_se_size:int):
         timestamps = []
         
         structure = np.ones((closing_se_size,), dtype=int)
@@ -179,6 +179,48 @@ class Stats:
 
         return timestamps
 
+    
+    def get_frame_delay(self, b_video_detection : NDArray, b_audio_detection : NDArray, window : int, closing_se_size : int):
+
+        if len(b_video_detection) != len(b_audio_detection):
+            raise RuntimeError("Both vectors need to have the same size!")
+
+        time_stamps = self.get_detection_duration_in_frames(ground_truth=b_video_detection, closing_se_size=closing_se_size)
+
+        frame_delays = []
+        for start_frame, end_frame in time_stamps:
+
+            limit_sup = min(start_frame+window-1, end_frame)
+            for i in range(start_frame, limit_sup, 1):
+                if b_audio_detection == 1:
+                    frame_delays.append(i-start_frame)
+                    break
+
+        return frame_delays
+
+    def get_first_idx_after_time(self, time):
+        pass
+
+    def get_seconds_delay(self, b_video_detection : NDArray, frame_seconds : NDArray, audio_detection : NDArray, audio_duration : float, window : int, closing_se_size : int):
+
+        time_stamps = self.get_detection_duration_in_frames(ground_truth=b_video_detection, closing_se_size=closing_se_size)
+
+        frame_delays_s = []
+        for start_frame, end_frame in time_stamps:
+
+            limit_sup_frame = min(start_frame+window-1, end_frame)
+
+            limit_inf_seconds = frame_seconds[start_frame]
+            limit_sup_seconds = frame_seconds[limit_sup_frame]
+            
+            for i in range(self.get_first_idx_after_time(limit_inf_seconds), self.get_first_idx_after_time(limit_sup_frame), 1):
+                if audio_detection == 1:
+                    frame_delays_s.append(i-start_frame)
+                    break
+
+        return frame_delays_s
+
+
     def latency_array(self, ground_truth : NDArray, predictions : NDArray, time_stamps : list):
     
         if self.sampling != 1:
@@ -205,7 +247,7 @@ class Stats:
                                  closing_structure_size : int = 10) -> float:
         
         if self.general_purpose:
-            time_stamps = self.get_detection_duration(ground_truth=ground_truth, closing_se_size=closing_structure_size)
+            time_stamps = self.get_detection_duration_in_frames(ground_truth=ground_truth, closing_se_size=closing_structure_size)
 
             la_rec = self.latency_array(ground_truth=ground_truth,
                                     predictions = predictions,

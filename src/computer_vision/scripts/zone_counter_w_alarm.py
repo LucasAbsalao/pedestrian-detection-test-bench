@@ -283,7 +283,7 @@ def count_zones(arg_list = None):
     final_detection = ah.morph_closing(binary_detection=binary_detection,
                                        struct_size=20)
 
-    detected_audio_video = ah.time_interpolation(time_stamps, final_detection)
+    detected_audio_video = ah.resample_detection(time_stamps, final_detection)
 
     plt.subplot(1,2,1)
     plt.plot(final_detection, color='red')
@@ -338,7 +338,7 @@ def count_zones(arg_list = None):
     plt.vlines(time_stamps, 0, 1 + minimum_weight, linestyles='dashed')
     plt.show()
     
-    video_duration = int(total_frames//fps)
+    video_duration = total_frames/fps
     general_statistics.calculate_rfa(video_duration)
 
     print("\n" + "="*30 + " EVALUATION REPORT " + "="*30)
