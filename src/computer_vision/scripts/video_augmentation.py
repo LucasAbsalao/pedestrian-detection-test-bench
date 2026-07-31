@@ -260,7 +260,8 @@ def init_libx265_rawvideo(final_video_path : Path, width : int, height : int, fp
         
         '-vcodec', 'libx265',
         '-crf', '17',
-        '-pix_fmt', 'yuv444p',       
+        '-preset', 'fast',       
+        '-pix_fmt', 'yuv444p',
         str(final_video_path)
     ]
      
@@ -306,39 +307,48 @@ def transform(arg_list=None):
     count_frames = 0
 
     start_time = time.perf_counter()
-    for i in tqdm(range(total_frames), desc=f"Applying {args.distortion} to video: "):
-        if cap.isOpened():
-            success, im0 = cap.read()
-            
-            if not success:
-                break
-            
-            new_img = apply_function(image = im0, distortion_str = args.distortion, parameters = params, depth_model=model)
 
-            if codec == "libx265_rawvideo":
-                if process.stdin is not None:
-                    process.stdin.write(new_img.tobytes())
+    try:
+        for i in tqdm(range(total_frames), desc=f"Applying {args.distortion} to video: "):
+            if cap.isOpened():
+                success, im0 = cap.read()
+                
+                if not success:
+                    break
+                
+                new_img = apply_function(image = im0, distortion_str = args.distortion, parameters = params, depth_model=model)
+
+                if codec == "libx265_rawvideo":
+                    if process.stdin is not None:
+                        process.stdin.write(new_img.tobytes())
+                    else:
+                        raise BrokenPipeError("Couldn't send bytes to subprocess' stdin PIPE")
                 else:
-                    raise BrokenPipeError("Couldn't send bytes to subprocess' stdin PIPE")
+                    video_writer.write(new_img)
+
+                count_frames+=1
+
             else:
-                video_writer.write(new_img)
+                break
 
-            count_frames+=1
+    except KeyboardInterrupt:
+        print(f"\n[INFO] Execution interrupted by user at frame {count_frames}. Cleaning up...")
 
-        else:
-            break
+    finally:
+        cap.release()
 
-    
-    cap.release()
-
-    if codec == 'libx265_rawvideo':
-        if process.stdin is not None:
-            process.stdin.close() 
-        else:
-            raise BrokenPipeError("Couldn't close process' stdin PIPE")
-        process.wait()
-    else:       
-        video_writer.release()
+        if codec == 'libx265_rawvideo':
+            if process.stdin is not None:
+                try:
+                    process.stdin.close()
+                except Exception:
+                    pass
+            
+            process.terminate() 
+            process.wait()
+            print("[INFO] FFmpeg subprocess successfully terminated.")
+        else:       
+            video_writer.release()
 
     if args.codec == 'libx265':
         print('Transforming to H265')

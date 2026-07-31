@@ -15,7 +15,7 @@ gaussian_blur:
   stdev: 0.0
 gaussian_noise:
   mean: 0.0
-  stdev: 10.0
+  stdev: 60.0
 gaussian_noise_conv:
   kernel_size: 9
   mean: 0.0

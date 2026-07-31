@@ -5,6 +5,12 @@ python3 zone_counter_w_alarm.py \
     --predictions /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt \
     --point-d 245 2028     --point-u 1244 653 \
     --alarm blaxtair_real
+
+    python3 zone_counter_w_alarm.py \
+    --video /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_noise.mp4 \
+    --predictions /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt \
+    --point-d 245 2028     --point-u 1244 653 \
+    --alarm blaxtair_real
 '''
 
 import time
@@ -15,6 +21,7 @@ import argparse
 from pathlib import Path
 import sys
 import numpy as np
+from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 import pyaudio
 import threading
@@ -171,7 +178,7 @@ def count_zones(arg_list = None):
     args = parse_args(arg_list)
 
     close_detection_gaps = 20 # # Corresponds to how many frames the system can ignore to consider a single detection extract
-    window = 30
+    window = 60
     
     video_path = args.video.resolve()
     predictions_path = args.predictions.resolve()
@@ -280,7 +287,7 @@ def count_zones(arg_list = None):
 
     # ------------------------------------- Closing Ground Truth Holes -------------------------------------
 
-    closed_ground_truth = continuous_morphological_closing(ground_truth, 21)
+    closed_ground_truth = continuous_morphological_closing(3-ground_truth, 21)
     closed_ground_truth = (3-closed_ground_truth).astype(int)
 
     plt.subplot(1,2,1)

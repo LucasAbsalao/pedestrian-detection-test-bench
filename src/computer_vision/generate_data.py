@@ -109,7 +109,7 @@ def apply_distortion(file : Path, distortion : str, args : argparse.Namespace) -
         "--dest", str(DEFAULT_DISTORTION_DIR),
         "--name", distortion_video_name,
         "--distortion", distortion,
-        "--codec", 'libx265' #The difference between libx265 and libx265_rawvideo is the time and a small quality loss (78.43 seconds against 161.35)
+        "--codec", 'libx265_rawvideo' #The difference between libx265 and libx265_rawvideo is the time and a small quality loss (78.43 seconds against 161.35)
     ]
     video_augmentation.transform(distortion_args)
 
@@ -206,9 +206,6 @@ def generate():
 
     with open(str(DEFAULT_DATA_DIR / f'{args.name}.yaml'), "w") as yaml_file:
         yaml.dump(general_data, yaml_file, default_flow_style=False)
-
-    print("\n\n\nGenerated YAML:\n")
-    print(yaml.dump(general_data))
 
 
 if __name__ == '__main__':

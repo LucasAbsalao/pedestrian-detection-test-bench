@@ -82,6 +82,150 @@ class TestStats(unittest.TestCase):
     
         self.assertEqual(timestamps, [[0, 199]])
 
+    def test_get_frame_delay_basic(self):
+        """Audio detection starts a few frames after video detection start."""
+        n = 200
+        b_video = np.zeros(n, dtype=int)
+        b_audio = np.zeros(n, dtype=int)
+        b_video[30:56] = 1
+        b_audio[33:56] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_frame_delay(b_video, b_audio, window=10, closing_se_size=1)
+
+        self.assertEqual(delays, [3])
+
+    def test_get_frame_delay_zero_delay(self):
+        """Audio detection at the exact same frame as video detection start."""
+        n = 200
+        b_video = np.zeros(n, dtype=int)
+        b_audio = np.zeros(n, dtype=int)
+        b_video[30:56] = 1
+        b_audio[30:56] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_frame_delay(b_video, b_audio, window=10, closing_se_size=1)
+
+        self.assertEqual(delays, [0])
+
+    def test_get_frame_delay_no_audio_detection(self):
+        """No audio detection at all -> delay equals window for each detection."""
+        n = 200
+        b_video = np.zeros(n, dtype=int)
+        b_audio = np.zeros(n, dtype=int)
+        b_video[30:56] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_frame_delay(b_video, b_audio, window=10, closing_se_size=1)
+
+        self.assertEqual(delays, [10])
+
+    def test_get_frame_delay_multiple_detections(self):
+        """Two separate video detections, each with its own audio delay."""
+        n = 200
+        b_video = np.zeros(n, dtype=int)
+        b_audio = np.zeros(n, dtype=int)
+        b_video[30:56] = 1
+        b_video[100:151] = 1
+        b_audio[35] = 1
+        b_audio[102] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_frame_delay(b_video, b_audio, window=10, closing_se_size=1)
+
+        self.assertEqual(delays, [5, 2])
+
+    def test_get_frame_delay_audio_after_window(self):
+        """Audio detection present but beyond the window -> delay equals window."""
+        n = 200
+        b_video = np.zeros(n, dtype=int)
+        b_audio = np.zeros(n, dtype=int)
+        b_video[30:56] = 1
+        b_audio[45] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_frame_delay(b_video, b_audio, window=10, closing_se_size=1)
+
+        # window=10, search range is [30, 40); audio at 45 is not found
+        self.assertEqual(delays, [10])
+
+    def test_get_frame_delay_window_boundary_exclusive(self):
+        """Audio at index start+window is NOT detected (range is exclusive)."""
+        n = 200
+        b_video = np.zeros(n, dtype=int)
+        b_audio = np.zeros(n, dtype=int)
+        b_video[30:56] = 1
+        b_audio[40] = 1  # 30 + window(10) = 40, excluded
+
+        stats = Stats(general=True)
+        delays = stats.get_frame_delay(b_video, b_audio, window=10, closing_se_size=1)
+
+        self.assertEqual(delays, [10])
+
+    def test_get_frame_delay_last_index_in_window(self):
+        """Audio at the last index inside the window -> delay = window - 1."""
+        n = 200
+        b_video = np.zeros(n, dtype=int)
+        b_audio = np.zeros(n, dtype=int)
+        b_video[30:56] = 1
+        b_audio[39] = 1  # inside [30, 40)
+
+        stats = Stats(general=True)
+        delays = stats.get_frame_delay(b_video, b_audio, window=10, closing_se_size=1)
+
+        self.assertEqual(delays, [9])
+
+    def test_get_frame_delay_audio_before_video_start(self):
+        """Audio before video detection start is not in the window -> delay = window."""
+        n = 200
+        b_video = np.zeros(n, dtype=int)
+        b_audio = np.zeros(n, dtype=int)
+        b_video[30:56] = 1
+        b_audio[25] = 1  # before start frame 30
+
+        stats = Stats(general=True)
+        delays = stats.get_frame_delay(b_video, b_audio, window=10, closing_se_size=1)
+
+        self.assertEqual(delays, [10])
+
+    def test_get_frame_delay_window_clipped_at_video_end(self):
+        """Window beyond the end of the array is clipped to array length."""
+        n = 200
+        b_video = np.zeros(n, dtype=int)
+        b_audio = np.zeros(n, dtype=int)
+        b_video[195:200] = 1
+        b_audio[197] = 1
+
+        stats = Stats(general=True)
+        # window=10 but only 5 frames remain: [195, 200)
+        delays = stats.get_frame_delay(b_video, b_audio, window=10, closing_se_size=1)
+
+        self.assertEqual(delays, [2])
+
+    def test_get_frame_delay_with_closing(self):
+        """Video detection gap merged by closing; delay measured from merged start."""
+        n = 200
+        b_video = np.zeros(n, dtype=int)
+        b_audio = np.zeros(n, dtype=int)
+        b_video[30:56] = 1
+        b_video[57] = 1  # 1-frame gap at index 56, closed with size 3
+        b_audio[40] = 1
+
+        stats = Stats(general=True)
+        # closing_se_size=3 merges into [30, 57]; audio at 40 -> delay 10
+        delays = stats.get_frame_delay(b_video, b_audio, window=15, closing_se_size=3)
+
+        self.assertEqual(delays, [10])
+
+    def test_get_frame_delay_mismatched_lengths(self):
+        """Different length vectors should raise RuntimeError."""
+        b_video = np.zeros(100, dtype=int)
+        b_audio = np.zeros(50, dtype=int)
+
+        stats = Stats(general=True)
+        with self.assertRaises(RuntimeError):
+            stats.get_frame_delay(b_video, b_audio, window=10, closing_se_size=1)
+
 
 if __name__ == '__main__':
     unittest.main()

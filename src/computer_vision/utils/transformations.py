@@ -31,10 +31,11 @@ def fog(image: NDArray, depth_map: NDArray, minimum_distance: float,
     return new_image
 
 def gaussian_noise(image: NDArray, mean: float = 0.0, stdev: float = 0.2) -> NDArray:
-    noise = np.random.normal(loc=mean, scale=stdev, size=image.shape)
-    new_image = image + noise
+    noise = np.empty(image.shape, dtype=np.float32)
 
-    return np.clip(new_image, 0, 255).astype(image.dtype)
+    cv2.randn(dst=noise, mean=mean, stddev=stdev)
+
+    return cv2.add(image, noise, dtype=cv2.CV_8U)
 
 def gaussian_blur(image: NDArray, kernel_size: int = 11, stdev: float = 0.) -> NDArray:
     new_image = cv2.GaussianBlur(image, ksize=(kernel_size, kernel_size), sigmaX=stdev, sigmaY=stdev)
@@ -107,7 +108,7 @@ def salt_and_pepper_conv(image : NDArray, salt_prob : float, pepper_prob : float
     mid_up = kernel_size - mid_down
 
     factor = 1 / kernel[mid_down,mid_down]
-    kernel = factor * kernel.astype(np.float32) * 20
+    kernel = factor * kernel.astype(np.float32) * 255
     
     # Padding
     pad_tuple = ((mid_down, mid_up), (mid_down,mid_up), (0,0)) if is_color else (mid_down, mid_up)

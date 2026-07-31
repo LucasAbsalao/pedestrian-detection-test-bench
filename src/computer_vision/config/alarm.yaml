@@ -4,3 +4,6 @@ blaxtair:
 blaxtair_real:
   amplitude: 9.084775924682617
   frequency: 5904.290909090909
+blaxtair_smartphone:
+  amplitude: 16.309579849243164
+  frequency: 5904.290909090909
