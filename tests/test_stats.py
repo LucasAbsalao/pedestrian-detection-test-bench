@@ -25,7 +25,7 @@ class TestStats(unittest.TestCase):
         
         # Use closing_se_size=3 to close the single-frame gap at index 56
         # Structure of size 3 will dilate by 1 on each side, closing gaps of size 1
-        timestamps = stats.get_detection_duration(ground_truth, closing_se_size=3)
+        timestamps = stats.get_detection_duration_in_frames(ground_truth, closing_se_size=3)
         
         # Expected: gap at 56 is closed (30-55 and 57 merge), 
         # but gap between 57 and 100 (42 frames) remains open
@@ -42,7 +42,7 @@ class TestStats(unittest.TestCase):
         stats = Stats(general=True)
         
         # closing_se_size=1 means no closing (structure of size 1)
-        timestamps = stats.get_detection_duration(ground_truth, closing_se_size=1)
+        timestamps = stats.get_detection_duration_in_frames(ground_truth, closing_se_size=1)
         
         # All three segments should be separate
         expected = [[30, 55], [57, 58], [100, 150]]
@@ -58,7 +58,7 @@ class TestStats(unittest.TestCase):
         stats = Stats(general=True)
         
         # closing_se_size=50 would close both gaps (gap of 1 and gap of 42)
-        timestamps = stats.get_detection_duration(ground_truth, closing_se_size=50)
+        timestamps = stats.get_detection_duration_in_frames(ground_truth, closing_se_size=50)
         
         # Everything merges into one segment
         expected = [[30, 150]]
@@ -69,7 +69,7 @@ class TestStats(unittest.TestCase):
         ground_truth = np.zeros(200, dtype=int)  # All no-detection
         
         stats = Stats(general=True)
-        timestamps = stats.get_detection_duration(ground_truth, closing_se_size=3)
+        timestamps = stats.get_detection_duration_in_frames(ground_truth, closing_se_size=3)
         
         self.assertEqual(timestamps, [])
 
@@ -78,7 +78,7 @@ class TestStats(unittest.TestCase):
         ground_truth = np.ones(200, dtype=int)  # All frames have detection
     
         stats = Stats(general=True)
-        timestamps = stats.get_detection_duration(ground_truth, closing_se_size=1)
+        timestamps = stats.get_detection_duration_in_frames(ground_truth, closing_se_size=1)
     
         self.assertEqual(timestamps, [[0, 199]])
 

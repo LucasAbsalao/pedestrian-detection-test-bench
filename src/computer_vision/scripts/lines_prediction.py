@@ -20,6 +20,8 @@ import argparse
 from pathlib import Path
 import sys
 from ultralytics import YOLO
+from numpy.typing import NDArray
+import numpy as np
 
 SRC_DIR = Path(__file__).resolve().parents[1]
 if str(SRC_DIR) not in sys.path:
@@ -131,6 +133,28 @@ def parse_args(args_list=None) -> argparse.Namespace:
     )
     return parser.parse_args(args_list)
 
+def continuous_morphological_closing(detection_array : NDArray, closing_se_size : int):
+    assert closing_se_size%2==1, "closing_se_size has to be odd"
+
+    closed_detection_array = np.copy(detection_array)
+    min_value = np.min(detection_array)
+    max_value = np.max(detection_array)
+
+    pad = int(closing_se_size // 2)
+
+    #Dilate
+    detection_array_padded_min = np.pad(detection_array, (pad, pad), mode='constant', constant_values=min_value)
+
+    for i in range(len(detection_array)):
+        closed_detection_array[i] = np.max(detection_array_padded_min[i:i+closing_se_size])
+
+    #Erode
+    detection_array_padded_max = np.pad(detection_array, (pad, pad), mode='constant', constant_values=max_value)
+    
+    for i in range(len(detection_array)):
+        closed_detection_array[i] = np.max(detection_array_padded_max[i:i+closing_se_size])
+
+
 
 def predict(args_list = None):
     args = parse_args(args_list)
@@ -210,7 +234,9 @@ def predict(args_list = None):
 
     cap.release()
     video_writer.release()
-    cv2.destroyAllWindows()
+
+    if args.show:
+        cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":

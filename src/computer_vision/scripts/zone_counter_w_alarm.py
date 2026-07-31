@@ -29,6 +29,7 @@ if str(SRC_DIR) not in sys.path:
     
 from utils.draw import write_lines, draw_bboxes_from_data
 from utils.audio_handler import AudioHandler
+from utils.transformations import resize
 from benchmark.stats import Stats
 
 DEFAULT_CSV_FILE = Path(__file__).resolve().parents[0] / "results.csv"
@@ -143,6 +144,28 @@ def parse_args(arg_list = None) -> argparse.Namespace:
     )
     return parser.parse_args(arg_list) 
 
+def continuous_morphological_closing(detection_array : NDArray, closing_se_size : int):
+    assert closing_se_size%2==1, "closing_se_size has to be odd"
+
+    closed_detection_array = np.copy(detection_array)
+    min_value = np.min(detection_array)
+    max_value = np.max(detection_array)
+
+    pad = int(closing_se_size // 2)
+
+    #Dilate
+    detection_array_padded_min = np.pad(detection_array, (pad, pad), mode='constant', constant_values=min_value)
+
+    for i in range(len(detection_array)):
+        closed_detection_array[i] = np.max(detection_array_padded_min[i:i+closing_se_size])
+
+    #Erode
+    detection_array_padded_max = np.pad(closed_detection_array, (pad, pad), mode='constant', constant_values=max_value)
+    
+    for i in range(len(detection_array)):
+        closed_detection_array[i] = np.min(detection_array_padded_max[i:i+closing_se_size])
+
+    return closed_detection_array
 
 def count_zones(arg_list = None):
     args = parse_args(arg_list)
@@ -231,8 +254,8 @@ def count_zones(arg_list = None):
                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
         cv2.putText(frame, f"Min Zone: {min_zone}", (20, 80), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-
-        cv2.imshow('Zone Counter', frame)
+        resized_frame = resize(frame, width=5120, height=2160)
+        cv2.imshow('Zone Counter', resized_frame)
         frame_time[frame_idx] = time.perf_counter()
         key = cv2.waitKey(delay) & 0xFF
         
@@ -255,13 +278,28 @@ def count_zones(arg_list = None):
     cap.release()
     cv2.destroyAllWindows()
 
+    # ------------------------------------- Closing Ground Truth Holes -------------------------------------
+
+    closed_ground_truth = continuous_morphological_closing(ground_truth, 21)
+    closed_ground_truth = (3-closed_ground_truth).astype(int)
+
+    plt.subplot(1,2,1)
+    plt.plot(3-ground_truth, color='red')
+    plt.title("Original Grount Truth")
+    
+    plt.subplot(1,2,2)
+    plt.plot(3-closed_ground_truth, color='blue')
+    plt.title("Grount Truth After Morphological Closing")
+    plt.show()
+    
+
     # ------------------------------------- Get Audio Detection -------------------------------------
     audio_data = ah.get_audio_stream_data()
 
-    seconds = len(audio_data) / RATE
+    audio_seconds = len(audio_data) / RATE
 
     frequency, t, dbs = ah.spectrogram(audio_data=audio_data,
-                                      seconds=seconds)
+                                      seconds=audio_seconds)
 
     ah.save_audio(output_path=str(WAVE_OUTPUT_PATH / "detection_audio.wav"))
 
@@ -281,7 +319,7 @@ def count_zones(arg_list = None):
                                                 alarm_frequency=alarm_frequency,
                                                 amp_threshold=amplitude_threshold,
                                                 interval=0.05,
-                                                seconds=seconds)
+                                                seconds=audio_seconds)
 
     final_detection = ah.morph_closing(binary_detection=binary_detection,
                                        struct_size=close_detection_gaps)
@@ -293,12 +331,12 @@ def count_zones(arg_list = None):
 
     plt.subplot(1,2,2)
     plt.plot(detected_audio_video, color='red')
-    plt.plot(3-ground_truth, color='blue')
+    plt.plot(3-closed_ground_truth, color='blue')
     plt.show()
 
 
     # ------------------------------------- Generate Statistics -------------------------------------
-
+    
     detected = detected_audio_video
     general_statistics = Stats(general = True)
     statistics_per_zone = {
@@ -308,10 +346,10 @@ def count_zones(arg_list = None):
     }
 
     for i in range(total_frames):
-        statistics_per_zone["green"].update(expected = ground_truth[i] == 2, predicted = detected[i]==1)
-        statistics_per_zone["orange"].update(expected = ground_truth[i] == 1, predicted = detected[i]==1)
-        statistics_per_zone["red"].update(expected = ground_truth[i] == 0, predicted = detected[i]==1)
-        general_statistics.update(expected=ground_truth[i]<3, predicted = detected[i]==1, weight_idx=2-ground_truth[i])
+        statistics_per_zone["green"].update(expected = closed_ground_truth[i] == 2, predicted = detected[i]==1)
+        statistics_per_zone["orange"].update(expected = closed_ground_truth[i] == 1, predicted = detected[i]==1)
+        statistics_per_zone["red"].update(expected = closed_ground_truth[i] == 0, predicted = detected[i]==1)
+        general_statistics.update(expected=closed_ground_truth[i]<3, predicted = detected[i]==1, weight_idx=2-closed_ground_truth[i])
     
     # Calculate performance metrics
     processed_frames = general_statistics.total_evaluations()
@@ -320,7 +358,7 @@ def count_zones(arg_list = None):
     
 
     minimum_weight = general_statistics.minimum_weight
-    binary_ground_truth = (ground_truth < 3).astype(int)
+    binary_ground_truth = (closed_ground_truth < 3).astype(int)
 
     time_stamps = general_statistics.get_detection_duration_in_frames(ground_truth=binary_ground_truth,
                                                                       closing_se_size=close_detection_gaps)
@@ -347,7 +385,7 @@ def count_zones(arg_list = None):
     second_delay = general_statistics.get_seconds_delay(b_video_detection=binary_ground_truth,
                                                         frame_seconds=frame_time,
                                                         audio_detection=final_detection,
-                                                        audio_duration=seconds,
+                                                        audio_duration=audio_seconds,
                                                         window=window,
                                                         closing_se_size=close_detection_gaps)
 
@@ -380,7 +418,7 @@ def count_zones(arg_list = None):
     print(statistics_per_zone['red'])
 
 
-    plt.plot(3-ground_truth)
+    plt.plot(3-closed_ground_truth)
     plt.plot(detected)
     plt.grid()
     plt.show()
