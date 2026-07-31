@@ -225,8 +225,6 @@ class AudioHandler:
 
         for frame in valid_frames:
             frame_time = video_time_array[frame] - video_time_array[0]
-            print("Frame time: ", frame_time)
-            print("second per detection unit: ", period)
             video_audio_b_detection[frame] = self.first_audio_data_after_time(audio_data=binary_detection, time=frame_time, period_in_seconds=period)
 
         return video_audio_b_detection

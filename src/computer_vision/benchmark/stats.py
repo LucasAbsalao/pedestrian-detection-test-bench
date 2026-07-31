@@ -177,16 +177,22 @@ class Stats:
 
         time_stamps = self.get_detection_duration_in_frames(ground_truth=b_video_detection, closing_se_size=closing_se_size)
 
-        frame_delays = []
+        frame_delay = []
         for start_frame, end_frame in time_stamps:
 
             limit_sup = min(start_frame+window, len(b_video_detection))
+            detected = False
             for i in range(start_frame, limit_sup):
                 if b_audio_detection[i] == 1:
-                    frame_delays.append(i-start_frame)
+                    frame_delay.append(i-start_frame)
+                    detected = True
                     break
 
-        return frame_delays
+            if not detected:
+                frame_delay.append(window)
+                    
+        self.frame_delay = frame_delay
+        return frame_delay
 
     def get_first_idx_after_time(self, time:float, sampling_period:float):
         idx = math.ceil(time / sampling_period)
@@ -199,32 +205,42 @@ class Stats:
 
         sampling_period_in_seconds = audio_duration / len(audio_detection)
 
-        frame_delays_s = []
+        second_delay = []
         for start_frame, end_frame in time_stamps:
 
             limit_sup_frame = min(start_frame+window, len(frame_seconds)-1)
 
-            limit_inf_seconds = frame_seconds[start_frame]
+            limit_inf_seconds = float(frame_seconds[start_frame])
             limit_inf_audio_idx = self.get_first_idx_after_time(limit_inf_seconds, sampling_period_in_seconds)
 
-            limit_sup_seconds = frame_seconds[limit_sup_frame]
+            limit_sup_seconds = float(frame_seconds[limit_sup_frame])
             limit_sup_audio_idx = self.get_first_idx_after_time(limit_sup_seconds, sampling_period_in_seconds)
 
-            #Check if it can get bigger than the lengththe own audio detection
+            # Check if it can get bigger than the length of the audio detection
             limit_sup_audio_idx = min(limit_sup_audio_idx, len(audio_detection))
+
+            detected = False
             
             for i in range(limit_inf_audio_idx, limit_sup_audio_idx):
                 if audio_detection[i] == 1:
-                    frame_delays_s.append(i*sampling_period_in_seconds - limit_inf_seconds)
+                    second_delay.append(i*sampling_period_in_seconds - limit_inf_seconds)
+                    detected = True
                     break
 
-        return frame_delays_s
+            if not detected:
+                second_delay.append(limit_sup_seconds)
+
+        self.second_delay = second_delay
+
+        return second_delay
 
 
     def latency_array(self, ground_truth : NDArray, predictions : NDArray, time_stamps : list):
     
         if self.sampling_la_recall != 1:
             raise NotImplemented("Sampling different from one was not yet implemented")
+
+        time_stamps = [[start, end]for start, end in time_stamps if start != end]
 
         t = np.arange(len(ground_truth), step=self.sampling_la_recall)
 
@@ -277,7 +293,9 @@ class Stats:
     
         if self.general_purpose:
             absolute_variables += f"Weighted True Positives: {self.weighted_tp}\n" + \
-                                  f"Weighted False Negatives: {self.weighted_fn}\n"
+                                  f"Weighted False Negatives: {self.weighted_fn}\n" + \
+                                  f"Frame Delays in Seconds: {self.second_delay}\n" + \
+                                  f"Frame Delays in frames: {self.frame_delay}\n"
             
             metrics += f"False Alarm Probability:                {self.calculate_pfa()*100:.2f}% (False Alarm probability)\n" + \
                        f"False Alarm Rate:                       {self.r_fa*100:.2f} (False Alarm Rate in occurence per hour)\n" + \

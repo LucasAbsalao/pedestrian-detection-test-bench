@@ -146,6 +146,9 @@ def parse_args(arg_list = None) -> argparse.Namespace:
 
 def count_zones(arg_list = None):
     args = parse_args(arg_list)
+
+    close_detection_gaps = 20 # # Corresponds to how many frames the system can ignore to consider a single detection extract
+    window = 30
     
     video_path = args.video.resolve()
     predictions_path = args.predictions.resolve()
@@ -185,7 +188,7 @@ def count_zones(arg_list = None):
     # Vectors for storing detections and ground truths
     ground_truth = np.zeros((total_frames), dtype=int)
     detected = np.zeros((total_frames,), dtype=int)
-    time_stamps = np.zeros((total_frames,), dtype=float)
+    frame_time = np.zeros((total_frames,), dtype=float)
     
     frame_idx = 0
     
@@ -230,7 +233,7 @@ def count_zones(arg_list = None):
                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
         cv2.imshow('Zone Counter', frame)
-        time_stamps[frame_idx] = time.perf_counter()
+        frame_time[frame_idx] = time.perf_counter()
         key = cv2.waitKey(delay) & 0xFF
         
         if key == ord('q'):
@@ -281,9 +284,9 @@ def count_zones(arg_list = None):
                                                 seconds=seconds)
 
     final_detection = ah.morph_closing(binary_detection=binary_detection,
-                                       struct_size=20)
+                                       struct_size=close_detection_gaps)
 
-    detected_audio_video = ah.resample_detection(time_stamps, final_detection)
+    detected_audio_video = ah.resample_detection(frame_time, final_detection)
 
     plt.subplot(1,2,1)
     plt.plot(final_detection, color='red')
@@ -319,10 +322,8 @@ def count_zones(arg_list = None):
     minimum_weight = general_statistics.minimum_weight
     binary_ground_truth = (ground_truth < 3).astype(int)
 
-    close_detection_gaps = 10 # # Corresponds to how many frames the system can ignore to consider a single detection extract
-
-    time_stamps = general_statistics.get_detection_duration(ground_truth=binary_ground_truth,
-                                                            closing_se_size=close_detection_gaps)
+    time_stamps = general_statistics.get_detection_duration_in_frames(ground_truth=binary_ground_truth,
+                                                                      closing_se_size=close_detection_gaps)
                                                             
     class_la_array = general_statistics.latency_array(ground_truth = binary_ground_truth,
                                                       predictions = detected,
@@ -337,6 +338,23 @@ def count_zones(arg_list = None):
     plt.title("Latency Recall Evaluation")
     plt.vlines(time_stamps, 0, 1 + minimum_weight, linestyles='dashed')
     plt.show()
+
+    frame_delay = general_statistics.get_frame_delay(b_video_detection=binary_ground_truth,
+                                                     b_audio_detection=detected_audio_video,
+                                                     window = window,
+                                                     closing_se_size=close_detection_gaps)
+
+    second_delay = general_statistics.get_seconds_delay(b_video_detection=binary_ground_truth,
+                                                        frame_seconds=frame_time,
+                                                        audio_detection=final_detection,
+                                                        audio_duration=seconds,
+                                                        window=window,
+                                                        closing_se_size=close_detection_gaps)
+
+    print("Frame Delay: ", frame_delay)
+    print("Second Delay: ", second_delay)
+    if len(frame_delay) != len(second_delay):
+        raise RuntimeError("Quantity of frame delays and seconds delays are different, what shouldn't happen")
     
     video_duration = total_frames/fps
     general_statistics.calculate_rfa(video_duration)
@@ -384,6 +402,9 @@ def count_zones(arg_list = None):
         'Green Recall': statistics_per_zone['green'].calculate_recall()
     }
     csv_file_path = args.csv.resolve()
+    delay_csv_file_path = csv_file_path.with_stem(f"{csv_file_path.stem}_delay")
+    delay_csv_file_path = delay_csv_file_path.resolve()
+
 
     if csv_file_path.exists():
         with open(csv_file_path, "a", newline='') as csvf:
@@ -396,6 +417,31 @@ def count_zones(arg_list = None):
             writer = csv.DictWriter(csvf, fieldnames=list(results.keys()))
             writer.writeheader()
             writer.writerow(results)
+
+    # ------------------------------------ DELAY ------------------------------------
+
+    delay_stats = []
+    print("frame delay", frame_delay)
+    for i in range(len(frame_delay)):
+        delay_dict = {
+            'name': video_path.stem,
+            'frame': frame_delay[i],
+            'second': second_delay[i]
+        }
+        delay_stats.append(delay_dict)
+
+    if delay_csv_file_path.exists():
+        with open(delay_csv_file_path, "a", newline='') as csvfile:
+            print("Adding delays to existing file...")
+            writer = csv.DictWriter(csvfile, fieldnames=list(delay_stats[0].keys()))
+            writer.writerows(delay_stats)
+    else:
+        print("Creating new csv file for storing delay")
+        with open(delay_csv_file_path, "w", newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=list(delay_stats[0].keys()))
+            writer.writeheader()
+            writer.writerows(delay_stats)
+        
 
 if __name__ == "__main__":
     count_zones()

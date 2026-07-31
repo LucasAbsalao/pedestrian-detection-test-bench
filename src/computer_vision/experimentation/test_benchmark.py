@@ -19,13 +19,14 @@ s = Stats(general=True)
 
 ground_truth = np.zeros(200, dtype=int)
 ground_truth[50:71] = 1
+ground_truth[100:101] = 1
 ground_truth[130:171] = 1
 ground_truth[175:200] = 1
 
 prediction = np.ones(200, dtype=int)
 
 
-time_stamps = s.get_detection_duration(ground_truth, 1)
+time_stamps = s.get_detection_duration_in_frames(ground_truth, 1)
 la_array = s.latency_array(ground_truth=ground_truth,
                            predictions=prediction,
                            time_stamps=time_stamps)
