@@ -216,7 +216,7 @@ def count_zones(arg_list = None):
     delay = max(1, int(1000 / (fps if fps > 0 else 30)))
     
     # Vectors for storing detections and ground truths
-    ground_truth = np.zeros((total_frames), dtype=int)
+    ground_truth = np.full((total_frames), 3, dtype=int)
     detected = np.zeros((total_frames,), dtype=int)
     frame_time = np.zeros((total_frames,), dtype=float)
     
@@ -334,9 +334,11 @@ def count_zones(arg_list = None):
     detected_audio_video = ah.resample_detection(frame_time, final_detection)
 
     plt.subplot(1,2,1)
+    plt.title("Audio detection")
     plt.plot(final_detection, color='red')
 
     plt.subplot(1,2,2)
+    plt.title("Audio detection after resampling")
     plt.plot(detected_audio_video, color='red')
     plt.plot(3-closed_ground_truth, color='blue')
     plt.show()
@@ -393,6 +395,7 @@ def count_zones(arg_list = None):
                                                         frame_seconds=frame_time,
                                                         audio_detection=final_detection,
                                                         audio_duration=audio_seconds,
+                                                        audio_start_timestamp=ah.record_start_time,
                                                         window=window,
                                                         closing_se_size=close_detection_gaps)
 
@@ -442,6 +445,8 @@ def count_zones(arg_list = None):
         'P_false_alarm': general_statistics.calculate_pfa(),
         'R_false_alarm': general_statistics.r_fa,
         'NDCR': general_statistics.calculate_ndcr(),
+        'Frame_Delay': general_statistics.frame_delay,
+        "Seconds_Delay": general_statistics.seconds_delay,
         'Red Recall': statistics_per_zone['red'].calculate_recall(),
         'Orange Recall': statistics_per_zone['orange'].calculate_recall(),
         'Green Recall': statistics_per_zone['green'].calculate_recall()

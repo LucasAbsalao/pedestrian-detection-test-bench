@@ -195,7 +195,7 @@ class Stats:
         return frame_delay
 
     def get_first_idx_after_time(self, time:float, sampling_period:float):
-        idx = math.ceil(time / sampling_period)
+        idx = math.ceil(round(time / sampling_period, 7))
         return idx
         
 
@@ -216,27 +216,89 @@ class Stats:
             limit_sup_frame = min(start_frame+window, len(frame_seconds)-1)
 
             limit_inf_seconds = float(frame_seconds[start_frame])
-            limit_inf_audio_idx = self.get_first_idx_after_time(limit_inf_seconds - audio_start_timestamp, sampling_period_in_seconds)
+            limit_inf_audio_idx = self.get_first_idx_after_time(limit_inf_seconds - audio_start_timestamp, sampling_period_in_seconds) # Indice of first audio chunk after frame was showed
 
             limit_sup_seconds = float(frame_seconds[limit_sup_frame])
-            limit_sup_audio_idx = self.get_first_idx_after_time(limit_sup_seconds - audio_start_timestamp, sampling_period_in_seconds)
+            limit_sup_audio_idx = self.get_first_idx_after_time(limit_sup_seconds - audio_start_timestamp, sampling_period_in_seconds) # Indice of first audio chunk after detection stopped or after last frame of the video was showed
 
             # Check if it can get bigger than the length of the audio detection
             limit_sup_audio_idx = min(limit_sup_audio_idx, len(audio_detection))
 
-            detected = False
-            
-            for i in range(limit_inf_audio_idx, limit_sup_audio_idx):
-                if audio_detection[i] == 1:
-                    second_delay.append(audio_start_timestamp + i*sampling_period_in_seconds - limit_inf_seconds)
-                    detected = True
-                    break
-
-            if not detected:
+            detections = np.flatnonzero(audio_detection[limit_inf_audio_idx:limit_sup_audio_idx])
+            if detections.size > 0:
+                first_audio_idx = limit_inf_audio_idx + detections[0]
+                second_delay.append(float(audio_start_timestamp + first_audio_idx*sampling_period_in_seconds - limit_inf_seconds))
+            else:
                 second_delay.append(max_seconds_delay)
 
-        self.second_delay = second_delay
+        self.seconds_delay = second_delay
 
+        return second_delay
+
+
+    def get_seconds_delay_vectorized(self, b_video_detection : NDArray, frame_seconds : NDArray, audio_detection : NDArray, audio_start_timestamp : float, audio_duration : float, window : int, closing_se_size : int, measure_from_end : bool = False):
+        """
+        Vectorized, more robust version of get_seconds_delay.
+
+        Differences from get_seconds_delay:
+          - Uses np.searchsorted on the audio timestamp axis instead of math.ceil,
+            which avoids float-rounding artifacts and negative-index wrap-around.
+          - Clamps audio indices to the valid range [0, len(audio_detection)].
+          - Fixed frame-period divisor (N frames -> N-1 intervals) for the sentinel.
+          - Optional measure_from_end: search the window starting at the END of the
+            detection segment instead of the start (useful when the alarm fires
+            after the person has left the zone).
+
+        Not being used.
+        """
+        b_video_detection = np.asarray(b_video_detection)
+        frame_seconds = np.asarray(frame_seconds, dtype=float)
+        audio_detection = np.asarray(audio_detection)
+
+        if b_video_detection.shape[0] != frame_seconds.shape[0]:
+            raise RuntimeError("b_video_detection and frame_seconds must have the same size!")
+        if frame_seconds.shape[0] < 1:
+            raise RuntimeError("frame_seconds must not be empty!")
+
+        sampling_period = audio_duration / audio_detection.shape[0]
+
+        # Absolute timestamp of every audio sample
+        audio_times = audio_start_timestamp + sampling_period * np.arange(audio_detection.shape[0])
+
+        # Average frame period: N frames span N-1 intervals
+        if frame_seconds.shape[0] > 1:
+            frame_period = (frame_seconds[-1] - frame_seconds[0]) / (frame_seconds.shape[0] - 1)
+        else:
+            frame_period = 0.0
+        max_seconds_delay = frame_period * window
+
+        time_stamps = self.get_detection_duration_in_frames(ground_truth=b_video_detection, closing_se_size=closing_se_size)
+
+        second_delay = []
+        for start_frame, end_frame in time_stamps:
+            if measure_from_end:
+                anchor_frame = end_frame
+            else:
+                anchor_frame = start_frame
+
+            limit_sup_frame = min(anchor_frame + window, frame_seconds.shape[0] - 1)
+
+            t_inf = frame_seconds[anchor_frame]
+            t_sup = frame_seconds[limit_sup_frame]
+
+            # First audio sample whose timestamp is >= t_inf (left search) and < t_sup (right, exclusive)
+            lo = int(np.searchsorted(audio_times, t_inf, side='left'))
+            hi = int(np.searchsorted(audio_times, t_sup, side='left'))
+            hi = min(hi, audio_detection.shape[0])
+
+            detections = np.flatnonzero(audio_detection[lo:hi])
+            if detections.size > 0:
+                first_audio_idx = lo + detections[0]
+                second_delay.append(float(audio_times[first_audio_idx] - t_inf))
+            else:
+                second_delay.append(max_seconds_delay)
+
+        self.seconds_delay = second_delay
         return second_delay
 
 
@@ -299,7 +361,7 @@ class Stats:
         if self.general_purpose:
             absolute_variables += f"Weighted True Positives: {self.weighted_tp}\n" + \
                                   f"Weighted False Negatives: {self.weighted_fn}\n" + \
-                                  f"Frame Delays in Seconds: {self.second_delay}\n" + \
+                                  f"Frame Delays in Seconds: {self.seconds_delay}\n" + \
                                   f"Frame Delays in frames: {self.frame_delay}\n"
             
             metrics += f"False Alarm Probability:                {self.calculate_pfa()*100:.2f}% (False Alarm probability)\n" + \
