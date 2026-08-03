@@ -47,11 +47,12 @@ add sampling to the latency recall.
 * The amplitude needs to be the mean of detection amplitude or first quartile OK
 * Points dictionary needs to be updated before detection in generate_data OK
 * Apply rain and dirty in distortions OK
-* Average Delay SOSO
-* Maybe some frames in the generator aren't being analysed
+* Average Delay OK
+* Maybe some frames in the generator aren't being analysed OK (opencv fault)
 * Morphological closing in the ground_truth OK
 * Apply new rain
 * Opencv dependency
+* Check Gaussian Noise
 
 
 La fumée et le document pour le PRE

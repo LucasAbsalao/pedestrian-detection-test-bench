@@ -177,7 +177,7 @@ def continuous_morphological_closing(detection_array : NDArray, closing_se_size 
 def count_zones(arg_list = None):
     args = parse_args(arg_list)
 
-    close_detection_gaps = 20 # # Corresponds to how many frames the system can ignore to consider a single detection extract
+    close_detection_gaps = 20 # Corresponds to how many frames the system can ignore to consider a single detection extract
     window = 60
     
     video_path = args.video.resolve()

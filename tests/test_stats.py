@@ -226,6 +226,221 @@ class TestStats(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             stats.get_frame_delay(b_video, b_audio, window=10, closing_se_size=1)
 
+    def _build_seconds_delay_inputs(self, n_frames=40, n_audio=200, audio_duration=40.0,
+                                    audio_start_timestamp=0.0, frame_seconds=None):
+        """Helper: build standard inputs for get_seconds_delay."""
+        if frame_seconds is None:
+            frame_seconds = np.arange(n_frames, dtype=float)
+        b_video = np.zeros(n_frames, dtype=int)
+        audio_detection = np.zeros(n_audio, dtype=int)
+        return b_video, frame_seconds, audio_detection, audio_start_timestamp, audio_duration
+
+    def test_get_first_idx_after_time_zero(self):
+        """Time 0 maps to index 0."""
+        stats = Stats(general=True)
+        self.assertEqual(stats.get_first_idx_after_time(0.0, 0.2), 0)
+
+    def test_get_first_idx_after_time_exact_multiple(self):
+        """Exact multiples of the sampling period map to the exact index."""
+        stats = Stats(general=True)
+        self.assertEqual(stats.get_first_idx_after_time(2.0, 0.2), 10)
+
+    def test_get_first_idx_after_time_rounds_up(self):
+        """Non-multiple times round up to the next sample index."""
+        stats = Stats(general=True)
+        self.assertEqual(stats.get_first_idx_after_time(2.1, 0.2), 11)
+
+    def test_get_first_idx_after_time_slightly_above(self):
+        """A tiny value rounds up to index 1."""
+        stats = Stats(general=True)
+        self.assertEqual(stats.get_first_idx_after_time(0.01, 0.2), 1)
+
+    def test_get_seconds_delay_zero_delay(self):
+        """Audio detection exactly at the video detection start -> delay 0."""
+        b_video, frame_seconds, audio_detection, audio_start, audio_duration = \
+            self._build_seconds_delay_inputs()
+        b_video[10:20] = 1
+        # start_frame=10 -> limit_inf_seconds=10.0, sampling period 40/200=0.2
+        # limit_inf_audio_idx = ceil(10.0/0.2) = 50
+        audio_detection[50] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_seconds_delay(b_video_detection=b_video, frame_seconds=frame_seconds,
+                                         audio_detection=audio_detection,
+                                         audio_start_timestamp=audio_start,
+                                         audio_duration=audio_duration,
+                                         window=5, closing_se_size=1)
+
+        np.testing.assert_allclose(delays, [0.0])
+
+    def test_get_seconds_delay_positive_delay(self):
+        """Audio detection a few samples after video start -> positive delay."""
+        b_video, frame_seconds, audio_detection, audio_start, audio_duration = \
+            self._build_seconds_delay_inputs()
+        b_video[10:20] = 1
+        # index 52 -> delay = 52*0.2 - 10.0 = 0.4
+        audio_detection[52] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_seconds_delay(b_video_detection=b_video, frame_seconds=frame_seconds,
+                                         audio_detection=audio_detection,
+                                         audio_start_timestamp=audio_start,
+                                         audio_duration=audio_duration,
+                                         window=5, closing_se_size=1)
+
+        np.testing.assert_allclose(delays, [0.4])
+
+    def test_get_seconds_delay_no_audio_detection(self):
+        """No audio detection in the window -> sentinel max_seconds_delay."""
+        b_video, frame_seconds, audio_detection, audio_start, audio_duration = \
+            self._build_seconds_delay_inputs()
+        b_video[10:20] = 1
+        # window=5 -> sentinel = (frame_seconds[-1]-frame_seconds[0])/len * window
+        #             = (39 - 0)/39 * 5 = 5.0
+        max_seconds_delay = (frame_seconds[-1] - frame_seconds[0]) / (len(frame_seconds)-1) * 5
+        stats = Stats(general=True)
+        delays = stats.get_seconds_delay(b_video_detection=b_video, frame_seconds=frame_seconds,
+                                         audio_detection=audio_detection,
+                                         audio_start_timestamp=audio_start,
+                                         audio_duration=audio_duration,
+                                         window=5, closing_se_size=1)
+
+        np.testing.assert_allclose(delays, [max_seconds_delay])
+
+    def test_get_seconds_delay_audio_after_window(self):
+        """Audio detection beyond the search window -> sentinel delay."""
+        b_video, frame_seconds, audio_detection, audio_start, audio_duration = \
+            self._build_seconds_delay_inputs()
+        b_video[10:20] = 1
+        # window=5 -> search range [50, 75); index 80 is outside
+        audio_detection[80] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_seconds_delay(b_video_detection=b_video, frame_seconds=frame_seconds,
+                                         audio_detection=audio_detection,
+                                         audio_start_timestamp=audio_start,
+                                         audio_duration=audio_duration,
+                                         window=5, closing_se_size=1)
+
+        np.testing.assert_allclose(delays, [5.0])
+
+    def test_get_seconds_delay_window_boundary_exclusive(self):
+        """Audio at the upper window boundary is NOT detected (range exclusive)."""
+        b_video, frame_seconds, audio_detection, audio_start, audio_duration = \
+            self._build_seconds_delay_inputs()
+        b_video[10:20] = 1
+        # search range is [50, 75); index 75 is excluded
+        audio_detection[75] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_seconds_delay(b_video_detection=b_video, frame_seconds=frame_seconds,
+                                         audio_detection=audio_detection,
+                                         audio_start_timestamp=audio_start,
+                                         audio_duration=audio_duration,
+                                         window=5, closing_se_size=1)
+
+        np.testing.assert_allclose(delays, [5.0])
+
+    def test_get_seconds_delay_multiple_detections(self):
+        """Two video segments, each producing its own delay."""
+        b_video, frame_seconds, audio_detection, audio_start, audio_duration = \
+            self._build_seconds_delay_inputs()
+        b_video[10:20] = 1
+        b_video[30:40] = 1
+        # First: [10,19] -> inf idx 50, sup idx 75; delay = 52*0.2 - 10 = 0.4
+        # Second: [30,39] -> inf idx 150, sup idx 175; delay = 152*0.2 - 30 = 0.4
+        audio_detection[52] = 1
+        audio_detection[152] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_seconds_delay(b_video_detection=b_video, frame_seconds=frame_seconds,
+                                         audio_detection=audio_detection,
+                                         audio_start_timestamp=audio_start,
+                                         audio_duration=audio_duration,
+                                         window=5, closing_se_size=1)
+
+        np.testing.assert_allclose(delays, [0.4, 0.4])
+
+    def test_get_seconds_delay_window_clipped_at_video_end(self):
+        """Window exceeding the video length is clipped to the last frame."""
+        b_video, frame_seconds, audio_detection, audio_start, audio_duration = \
+            self._build_seconds_delay_inputs()
+        b_video[35:40] = 1
+        # start=35, window=10 -> limit_sup_frame = min(45, 39) = 39
+        # inf idx = ceil(35/0.2) = 175, sup idx = ceil(39/0.2) = 195
+        # delay = 177*0.2 - 35 = 0.4
+        audio_detection[177] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_seconds_delay(b_video_detection=b_video, frame_seconds=frame_seconds,
+                                         audio_detection=audio_detection,
+                                         audio_start_timestamp=audio_start,
+                                         audio_duration=audio_duration,
+                                         window=10, closing_se_size=1)
+
+        np.testing.assert_allclose(delays, [0.4])
+
+    def test_get_seconds_delay_with_closing(self):
+        """Closing merges a small gap; delay measured from merged start."""
+        b_video, frame_seconds, audio_detection, audio_start, audio_duration = \
+            self._build_seconds_delay_inputs()
+        b_video[10:15] = 1
+        b_video[16:20] = 1  # 1-frame gap at index 15, closed with size 3
+        # closing merges into [10,19]; delay = 52*0.2 - 10 = 0.4
+        audio_detection[52] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_seconds_delay(b_video_detection=b_video, frame_seconds=frame_seconds,
+                                         audio_detection=audio_detection,
+                                         audio_start_timestamp=audio_start,
+                                         audio_duration=audio_duration,
+                                         window=5, closing_se_size=3)
+
+        np.testing.assert_allclose(delays, [0.4])
+
+    def test_get_seconds_delay_respects_audio_start_timestamp(self):
+        """Audio_start_timestamp shifts the audio sample indices."""
+        b_video, frame_seconds, audio_detection, audio_start, audio_duration = \
+            self._build_seconds_delay_inputs(audio_start_timestamp=2.0)
+        b_video[10:20] = 1
+        # start=10 -> inf idx = ceil((10-2)/0.2) = 40
+        # delay = 2 + 42*0.2 - 10 = 0.4
+        audio_detection[42] = 1
+
+        stats = Stats(general=True)
+        delays = stats.get_seconds_delay(b_video_detection=b_video, frame_seconds=frame_seconds,
+                                         audio_detection=audio_detection,
+                                         audio_start_timestamp=audio_start,
+                                         audio_duration=audio_duration,
+                                         window=5, closing_se_size=1)
+
+        np.testing.assert_allclose(delays, [0.4])
+
+    def test_get_seconds_delay_user_scenario(self):
+        """Audio detection starts after some seconds (user's original scenario)."""
+        b_video = np.zeros(40, dtype=int)
+        b_video[27:35] = 1
+
+        frame_seconds = np.arange(1, 41, 1)
+
+        audio_detection = np.zeros(200, dtype=int)
+        audio_detection[136:140] = 1
+        audio_duration = 40
+        audio_start_time = 0.9
+
+        stats = Stats(general=True)
+        second_delays = stats.get_seconds_delay(b_video_detection=b_video,
+                                                frame_seconds=frame_seconds,
+                                                audio_start_timestamp=audio_start_time,
+                                                audio_detection=audio_detection,
+                                                audio_duration=audio_duration,
+                                                window=10,
+                                                closing_se_size=3)
+
+        expected_delays = [0.1]
+
+        self.assertEqual(len(second_delays), len(expected_delays))
+        np.testing.assert_allclose(second_delays, expected_delays)
 
 if __name__ == '__main__':
     unittest.main()

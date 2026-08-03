@@ -199,22 +199,27 @@ class Stats:
         return idx
         
 
-    def get_seconds_delay(self, b_video_detection : NDArray, frame_seconds : NDArray, audio_detection : NDArray, audio_duration : float, window : int, closing_se_size : int):
+    def get_seconds_delay(self, b_video_detection : NDArray, frame_seconds : NDArray, audio_detection : NDArray, audio_start_timestamp : float, audio_duration : float, window : int, closing_se_size : int):
 
+        if len(b_video_detection) != len(frame_seconds):
+                    raise RuntimeError("Both vectors of detection and timestamps need to have the same size!")
+        
         time_stamps = self.get_detection_duration_in_frames(ground_truth=b_video_detection, closing_se_size=closing_se_size)
 
         sampling_period_in_seconds = audio_duration / len(audio_detection)
 
         second_delay = []
+
+        max_seconds_delay = (frame_seconds[-1] - frame_seconds[0])/(len(frame_seconds)-1) * window
         for start_frame, end_frame in time_stamps:
 
             limit_sup_frame = min(start_frame+window, len(frame_seconds)-1)
 
             limit_inf_seconds = float(frame_seconds[start_frame])
-            limit_inf_audio_idx = self.get_first_idx_after_time(limit_inf_seconds, sampling_period_in_seconds)
+            limit_inf_audio_idx = self.get_first_idx_after_time(limit_inf_seconds - audio_start_timestamp, sampling_period_in_seconds)
 
             limit_sup_seconds = float(frame_seconds[limit_sup_frame])
-            limit_sup_audio_idx = self.get_first_idx_after_time(limit_sup_seconds, sampling_period_in_seconds)
+            limit_sup_audio_idx = self.get_first_idx_after_time(limit_sup_seconds - audio_start_timestamp, sampling_period_in_seconds)
 
             # Check if it can get bigger than the length of the audio detection
             limit_sup_audio_idx = min(limit_sup_audio_idx, len(audio_detection))
@@ -223,12 +228,12 @@ class Stats:
             
             for i in range(limit_inf_audio_idx, limit_sup_audio_idx):
                 if audio_detection[i] == 1:
-                    second_delay.append(i*sampling_period_in_seconds - limit_inf_seconds)
+                    second_delay.append(audio_start_timestamp + i*sampling_period_in_seconds - limit_inf_seconds)
                     detected = True
                     break
 
             if not detected:
-                second_delay.append(limit_sup_seconds)
+                second_delay.append(max_seconds_delay)
 
         self.second_delay = second_delay
 
