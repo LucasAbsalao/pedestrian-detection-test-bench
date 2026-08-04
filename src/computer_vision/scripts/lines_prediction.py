@@ -192,7 +192,7 @@ def predict(args_list = None):
             for r in results:
                 # print("------------------------------------- Bounding Boxes -------------------------------------")
 
-                im0 = draw.write_lines(im0, point_1, point_2, w)
+                im0 = draw.write_lines(im0, trapezes=trapezes)
                 
                 zone = draw.draw_bbox(image = im0, bbox = r.boxes.xyxy.cpu().numpy(), trapezes = trapezes, rectangle=True)
 

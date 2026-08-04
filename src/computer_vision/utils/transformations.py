@@ -269,3 +269,26 @@ def crop(image : NDArray,
         new_image = image[:, offset:new_width+offset]
 
     return new_image
+
+def continuous_morphological_closing(detection_array : NDArray, closing_se_size : int):
+    assert closing_se_size%2==1, "closing_se_size has to be odd"
+
+    closed_detection_array = np.copy(detection_array)
+    min_value = np.min(detection_array)
+    max_value = np.max(detection_array)
+
+    pad = int(closing_se_size // 2)
+
+    #Dilate
+    detection_array_padded_min = np.pad(detection_array, (pad, pad), mode='constant', constant_values=min_value)
+
+    for i in range(len(detection_array)):
+        closed_detection_array[i] = np.max(detection_array_padded_min[i:i+closing_se_size])
+
+    #Erode
+    detection_array_padded_max = np.pad(closed_detection_array, (pad, pad), mode='constant', constant_values=max_value)
+    
+    for i in range(len(detection_array)):
+        closed_detection_array[i] = np.min(detection_array_padded_max[i:i+closing_se_size])
+
+    return closed_detection_array

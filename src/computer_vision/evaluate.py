@@ -4,18 +4,9 @@ import argparse
 import yaml
 from pathlib import Path
 
-import scripts.zone_counter as zone_counter
+from core.config import DATA_DIR, EVALUATIONS_DIR, VIDEO_DIR, ALARM_CONFIG
+from core.zone_detection import ZoneDetector
 
-
-ROOT_DIR = Path(__file__).resolve().parents[2]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
-
-DEFAULT_DATA_DIR = ROOT_DIR / 'data'
-DEFAULT_ANNOTATION_DIR = DEFAULT_DATA_DIR / 'annotations'
-DEFAULT_VIDEO_DIR = DEFAULT_DATA_DIR / 'videos'
-DEFAULT_DISTORTION_DIR = DEFAULT_VIDEO_DIR / 'distortions'
-DEFAULT_CSV_DIR = ROOT_DIR / 'evaluations'
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,6 +25,18 @@ def parse_args() -> argparse.Namespace:
         default = "dataset_engins_de_chantier",
         help="Name of the dataset. Will look for an yaml with this name."
     )
+    parser.add_argument(
+        "--alarm",
+        type=Path,
+        default=ALARM_CONFIG,
+        help="Path to the alarm configuration file."
+    )
+    parser.add_argument(
+        "--distortion",
+        type=bool,
+        default=True,
+        help="If set to true, every single distorted video will also be put to test."
+    )
     return parser.parse_args()
 
 
@@ -43,27 +46,33 @@ def evaluate():
 
     print('\n\n')
     print("-"*30 + " STARTING DATASET EVALUATION " + "-"*30)
-    video_dir = DEFAULT_VIDEO_DIR.resolve()
+    video_dir = VIDEO_DIR.resolve()
 
-    yaml_file = DEFAULT_DATA_DIR / f'{args.dataset}.yaml'
+    yaml_file = DATA_DIR / f'{args.dataset}.yaml'
     yaml_file = yaml_file.resolve()
 
     if not yaml_file.exists():
-        raise FileNotFoundError(f"The yaml file {args.dataset}.yaml does not exist. Try adding a yaml file to the data via generate_data module")
+        raise FileExistsError(f"The yaml file {args.dataset}.yaml does not exist. Try adding a yaml file to the data via generate_data module")
     else:
         with open(str(yaml_file), 'r') as yaml_file:
             general_data = yaml.safe_load(yaml_file)
 
-    mp4_files = list(video_dir.rglob("*.mp4"))
+    if args.distortion:
+        mp4_files = list(video_dir.rglob("*.mp4"))
+    else:
+        mp4_files = list(video_dir.glob("*.mp4"))
     print("List of videos to be evaluated:")
     for file in mp4_files:
         print(str(file)) 
 
     # CSV file
-    csv_path = DEFAULT_CSV_DIR / f'{args.name}.csv'
+    csv_path = EVALUATIONS_DIR / args.name / f'{args.name}.csv'
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
     count_videos = 1
+
+    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path)
+
     for file in mp4_files:
         print("="*30 + f" EVALUATING VIDEO {count_videos}: {file.stem.upper()} " + "="*30 + "\n")
         print(f"The annotation file used for {file} is {general_data['data'][str(file)]}")
@@ -71,18 +80,13 @@ def evaluate():
         bbox_points = general_data['bbox_points'][str(file)]
 
         print(f"\nVideo Path: {file}")
-        evaluate_args = [
-            '--video', str(file),
-            '--predictions', general_data['data'][str(file)],
-            '--draw', 'True',
-            '--csv', str(csv_path),
-            '--point-d', str(bbox_points[0]), str(bbox_points[1]), 
-            '--point-u', str(bbox_points[2]), str(bbox_points[3])  
-        ]
-        zone_counter.count_zones(evaluate_args)
+
+        zone_detector.detect_zones(video = file,
+                                   predictions = general_data['data'][str(file)],
+                                   point_d = (bbox_points[0], bbox_points[1]),
+                                   point_u = (bbox_points[2], bbox_points[3]))
 
         count_videos += 1
-
 
 
 if __name__ == '__main__':

@@ -34,8 +34,8 @@ SRC_DIR = Path(__file__).resolve().parents[1]
 if str(SRC_DIR) not in sys.path:
     sys.path.append(str(SRC_DIR))
     
-from utils.draw import write_lines, draw_bboxes_from_data
-from utils.audio_handler import AudioHandler
+from utils.draw import write_lines_from_points, draw_bboxes_from_data
+from core.audio_handler import AudioHandler
 from utils.transformations import resize
 from benchmark.stats import Stats
 
@@ -253,7 +253,7 @@ def count_zones(arg_list = None):
         ground_truth[frame_idx] = min_zone
         
         if args.draw:
-            frame = write_lines(frame, point_d, point_u, w)
+            frame = write_lines_from_points(frame, point_d, point_u, w)
             frame = draw_bboxes_from_data(frame, frame_data)
         
         # Display current metrics overlay

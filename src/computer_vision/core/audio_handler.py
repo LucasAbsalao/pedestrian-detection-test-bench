@@ -9,13 +9,14 @@ from scipy import signal
 from scipy import stats
 from scipy.ndimage import binary_closing
 
+from .config import CHUNK, FORMAT, CHANNELS, RATE
 
 class AudioHandler:
     def __init__(self, 
-                 chunk : int = 1024,
-                 format : int = pyaudio.paInt16,
-                 channels : int = 1,
-                 rate : int = 44100,
+                 chunk : int = CHUNK,
+                 format : int = FORMAT,
+                 channels : int = CHANNELS,
+                 rate : int = RATE,
                  nperseg_factor : int = 100,
                  dbs : bool = True) -> None:
         
@@ -137,16 +138,16 @@ class AudioHandler:
         if show:
             plt.show()
 
-    def detection_frequency(self, spectrogram, frequency, frames_delay:int=20):
+    def detection_frequency(self, spectrogram, frequency, frames_offset:int=20, save_plot : Path = Path("amplitude_threshold.jpg")):
 
         frequence_with_max_amp = np.argmax(spectrogram, axis=0)
 
         f_idx = stats.mode(frequence_with_max_amp)[0]
 
         alarm_detection = frequence_with_max_amp == f_idx
-        alarm_detection = alarm_detection[frames_delay:] # Small delay to initialize audio sensor
+        alarm_detection = alarm_detection[frames_offset:] # Small delay to initialize audio sensor
 
-        alarm_frequency_amplitudes = spectrogram[f_idx,frames_delay:]
+        alarm_frequency_amplitudes = spectrogram[f_idx,frames_offset:]
 
         amplitude = np.quantile(alarm_frequency_amplitudes[alarm_detection], q=0.05)
 
@@ -161,11 +162,12 @@ class AudioHandler:
 
         plt.hlines(amplitude, 0, len(time_axis), linestyle='dashed', color='black', label=f'Min Amp Threshold')
         plt.title("Detecting amplitude threshold")
+        plt.savefig(str(save_plot))
         plt.show()
 
         return frequency[f_idx], amplitude
     
-    def get_binary_detection(self, audio_data, alarm_frequency, amp_threshold:float, interval:float, seconds:float):
+    def get_binary_detection(self, audio_data, alarm_frequency:float, amp_threshold:float, interval:float, seconds:float, save_plot : Path | None = None):
 
         f, t, Sxx = self.spectrogram(audio_data=audio_data, seconds=seconds)
 
@@ -181,13 +183,16 @@ class AudioHandler:
 
         plt.subplot(2,1,1)
         max_amplitude = np.max(alarm_spectrogram, axis=0)
-        plt.title("max_amplitude")
+        plt.title("max_amplitude_at_alarm_frequency")
         plt.plot(max_amplitude)
     
         plt.subplot(2,1,2)
         mean_amplitude = np.mean(alarm_spectrogram, axis=0)
         plt.plot(mean_amplitude)
-        plt.title("mean_amplitude")
+        plt.title("mean_amplitude_at_alarm_frequency")
+
+        if save_plot is not None:
+            plt.savefig(str(save_plot))
         plt.show()
 
         max_amplitude_alarm_sxx = np.max(alarm_spectrogram, axis=0)
