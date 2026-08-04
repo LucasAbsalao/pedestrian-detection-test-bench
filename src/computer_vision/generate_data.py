@@ -3,20 +3,11 @@ import argparse
 import yaml
 from pathlib import Path
 
-import scripts.lines_prediction as lines_prediction
-import scripts.video_augmentation as video_augmentation
-import scripts.draw_trapeze_points as draw_trapeze_points
+from core.config import DEFAULT_YOLO_MODEL, POINTS_CONFIG, ANNOTATION_DIR, DISTORTION_DIR, VIDEO_DIR, DATA_DIR
 
-
-ROOT_DIR = Path(__file__).resolve().parents[2]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
-
-DEFAULT_DATA_DIR = ROOT_DIR / 'data'
-DEFAULT_ANNOTATION_DIR = DEFAULT_DATA_DIR / 'annotations'
-DEFAULT_VIDEO_DIR = DEFAULT_DATA_DIR / 'videos'
-DEFAULT_DISTORTION_DIR = DEFAULT_VIDEO_DIR / 'distortions'
-DEFAULT_MODELS_DIR = ROOT_DIR / 'src' / 'computer_vision' / 'models'
+from core.annotation import VideoAnnotator
+from core.augmentation import DistortionHandler, DistortionType
+from core.trapezoid import TrapezoidMarker
 
 
 def parse_args() -> argparse.Namespace:
@@ -32,13 +23,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--model',
         type = str,
-        default = str(DEFAULT_MODELS_DIR / 'yolo26x.pt'),
+        default = str(DEFAULT_YOLO_MODEL),
         help = 'Model used to annotate images.'
     )
     parser.add_argument(
         '--points',
         type=Path,
-        default = DEFAULT_DATA_DIR / "points.yaml",
+        default = POINTS_CONFIG,
         help="Path to the yaml file storing points used for prioritized zone detection"
     )
     parser.add_argument(
@@ -61,57 +52,46 @@ def get_points_from_yaml(points_file_path : Path) -> dict :
 
 def add_points_to_file(file : Path, yaml_path : Path):
     print(f"Adding point to {file}")
-    points_args = [
-        "--name", yaml_path.stem,
-        "--config", str(yaml_path.parent),
-        "--video", str(file)
-    ]
-    draw_trapeze_points.mark_points(points_args)
+
+    trapezoid_marker = TrapezoidMarker(video_path = file, config = yaml_path.parent, name = yaml_path.stem)
+    trapezoid_marker.mark_trapezoids()
 
 
-def predict(file : Path, point_data : dict , args : argparse.Namespace):
+def annotate(file : Path, point_data : dict , point_path : Path, model : str, txt_path : Path):
 
     # Check if this file has a point associated to it
-    if str(file) not in list(point_data.keys()):
-        add_points_to_file(file, args.points)
-        point_data = get_points_from_yaml(args.points) or {}
+    if str(file) not in point_data:
+        add_points_to_file(file, point_path)
+        point_data = get_points_from_yaml(point_path) or {}
         if point_data is None:
             raise FileNotFoundError("Couldn't create yaml file")
     
     points_xyxy = point_data[str(file)]
 
-    predict_args = [
-        '--model_path', args.model,
-        '--video', str(file),
-        '--project', 'predict/annotation',
-        '--name', file.stem,
-        '--stream', 'False',
-        '--save', 'False',
-        '--save_txt', 'True',
-        '--show', 'False',   
-        '--txt-path', str(DEFAULT_ANNOTATION_DIR),
-        '--point-d', str(points_xyxy[0]), str(points_xyxy[1]), 
-        '--point-u', str(points_xyxy[2]), str(points_xyxy[3])
-    ]
-    lines_prediction.predict(predict_args) 
+    annotator = VideoAnnotator(video = file,
+                               point_d = (points_xyxy[0], points_xyxy[1]),
+                               point_u = (points_xyxy[2], points_xyxy[3]),
+                               model_path = model,
+                               name = file.stem,
+                               stream = False,
+                               save = False,
+                               save_txt_yolo = True,
+                               show=False,
+                               txt_output_path=txt_path
+                               )
+    
+    annotator.predict()
 
-def apply_distortion(file : Path, distortion : str, args : argparse.Namespace) -> Path:
+def apply_distortion(distortion_handler : DistortionHandler, file : Path, distortion : str, force : bool) -> Path:
     distortion_video_name = file.stem + '_' + distortion
 
-    distortion_path = DEFAULT_DISTORTION_DIR / f"{distortion_video_name}.mp4"
-    if distortion_path.exists() and not args.force:
+    distortion_path = distortion_handler.output_path / f"{distortion_video_name}.mp4"
+    if distortion_path.exists() and not force:
         return distortion_path
 
     print('='*15 + distortion + '='*15)
-    
-    distortion_args = [
-        "--video", str(file),
-        "--dest", str(DEFAULT_DISTORTION_DIR),
-        "--name", distortion_video_name,
-        "--distortion", distortion,
-        "--codec", 'libx265_rawvideo' #The difference between libx265 and libx265_rawvideo is the time and a small quality loss (78.43 seconds against 161.35)
-    ]
-    video_augmentation.transform(distortion_args)
+
+    distortion_handler.transform(distortion = DistortionType(distortion), name = distortion_video_name)
 
     return distortion_path
     
@@ -122,7 +102,7 @@ def generate():
 
     print('\n\n')
     print("-"*30 + " STARTING DATASET GENERATION " + "-"*30)
-    video_dir = DEFAULT_VIDEO_DIR.resolve()
+    video_dir = VIDEO_DIR.resolve()
 
     mp4_files = list(video_dir.glob("*.mp4"))
     print("List of videos to analyse:")
@@ -131,11 +111,9 @@ def generate():
 
     print('\n')
     print("List of distortions that will be applied to each video:")
-    distortions_str = video_augmentation.get_transformations()
+    distortions_str = DistortionHandler.get_transformations()
     for distortion in distortions_str:
         print(distortion)
-
-
 
     # Every information will be saved in this dictionary
     general_data = {
@@ -145,23 +123,26 @@ def generate():
         'bbox_points':{}
     }
 
+    point_path = args.points.resolve()
+
 
     # Getting points' data
-    point_data = get_points_from_yaml(args.points)
+    point_data = get_points_from_yaml(point_path)
 
     # Create a point data dictionary if it doesnt exist
     if not point_data:
         for file in mp4_files:
-            add_points_to_file(file, args.points)
-        point_data = get_points_from_yaml(args.points)
+            add_points_to_file(file, point_path)
+        point_data = get_points_from_yaml(point_path)
+    # Check if every single video has its own points setted
     else:
         file_missing = False
         for file in mp4_files:
             if str(file) not in point_data:
-                add_points_to_file(file, args.points)
+                add_points_to_file(file, point_path)
                 file_missing = True
         if file_missing:
-            point_data = get_points_from_yaml(args.points)
+            point_data = get_points_from_yaml(point_path)
                 
     if not point_data:
         raise FileNotFoundError("Couldn't create point yaml file")
@@ -170,7 +151,7 @@ def generate():
     for file in mp4_files:
             
         txt_file = "yolo_" + file.stem + ".txt"
-        txt_path = DEFAULT_ANNOTATION_DIR / txt_file
+        txt_path = ANNOTATION_DIR / txt_file
 
         # Check if there is already some annotation to this file
         if txt_path.exists() and not args.force:
@@ -180,9 +161,12 @@ def generate():
         else:
             print(f"Annotations will be saved in {txt_path}")
 
-            predict(file=file,
-                    point_data=point_data,
-                    args=args)
+            annotate(file = file,
+                    point_data = point_data,
+                    point_path = point_path,
+                    model = args.model,
+                    txt_path = txt_path
+                    )
 
             print("Annotations saved!!!\n\n")
 
@@ -194,17 +178,20 @@ def generate():
             
         print(f"Applying distortions to video {file}")
 
+        distortion_handler = DistortionHandler(video = file, codec = 'libx265_rawvideo')
+
         for distortion in distortions_str:
 
-            distortion_path = apply_distortion(file=file,
+            distortion_path = apply_distortion(distortion_handler=distortion_handler,
+                                               file=file,
                                                distortion=distortion,
-                                               args=args)
+                                               force=args.force)
             
             general_data['data'][str(distortion_path)] = str(txt_path)
             general_data['bbox_points'][str(distortion_path)] = list(point_data[str(file)])
 
 
-    with open(str(DEFAULT_DATA_DIR / f'{args.name}.yaml'), "w") as yaml_file:
+    with open(str(DATA_DIR / f'{args.name}.yaml'), "w") as yaml_file:
         yaml.dump(general_data, yaml_file, default_flow_style=False)
 
 

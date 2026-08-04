@@ -51,26 +51,30 @@ class DistortionType(Enum):
 class DistortionHandler:
     def __init__(self,
                  video : Path,
-                 distortion : DistortionType,
                  output_path : Path = DISTORTION_DIR,
-                 name : str = '',
-                 codec : str = 'libx265'
+                 codec : str = 'libx265',
+                 distortion : DistortionType | None = None
                  ):
         
         self.video = video.resolve()
-        self.distortion = distortion
 
         output_path.mkdir(exist_ok=True, parents=True)
         self.output_path = output_path.resolve()
-
-        self.name = name
 
         # if codec is libx265, we will first save in a codec without loss, FFV1, and then transform it to h265 via ffmpeg
         self.codec = codec if codec != 'libx265' else 'FFV1'
 
         self.params = self._load_parameters()
 
-        self.model = self._init_depth_model() if self.distortion == DistortionType.FOG else None
+        if distortion is not None:
+            self.init_for_distortion(distortion, '')
+
+    def init_for_distortion(self, distortion : DistortionType, name : str):
+        self.name = name
+
+        self.distortion = distortion
+
+        self.model = self._init_depth_model if self.distortion == DistortionType.FOG else None
 
     def apply_function(self, image : NDArray, parameters : dict, depth_model=None):
     
@@ -109,7 +113,8 @@ class DistortionHandler:
     
             return new_image
 
-    def transform(self):
+    def transform(self, distortion : DistortionType, name : str):
+        self.init_for_distortion(distortion=distortion, name=name)
 
         if len(self.name) == 0:
             dest_file = self.output_path / f'{self.video.stem}_{self.distortion}.mp4'
@@ -266,7 +271,8 @@ class DistortionHandler:
         process = subprocess.Popen(comando_ffmpeg, stdin=subprocess.PIPE, stderr=subprocess.DEVNULL)
         return process 
 
-    def get_transformations(self):
+    @staticmethod
+    def get_transformations():
         return ['gaussian_noise', 
                 'gaussian_noise_conv', 
                 'gaussian_blur',

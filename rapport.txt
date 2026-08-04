@@ -1,0 +1,13 @@
+Talk about why cameras are better than any other thing
+State Of the Art
+
+Speak about blaxtair tests
+HIL
+Explain the moiré and the flickering effect
+
+Explain the acquisition that we did close to other cameras (Say that a big problem is that people cannot pass behind the excavator since it is prohibited)
+Show that GoPro Big Angle was the best one to do it
+
+Compare 4K with full HD
+Audio detection (Naive and improved versions)
+Compare with different distortions

@@ -172,7 +172,7 @@ class ZoneDetector:
         plt.plot(class_la_array)
         plt.title("Latency Recall Evaluation")
         plt.vlines(time_stamps, 0, 1 + minimum_weight, linestyles='dashed')
-        plt.show()
+        plt.savefig(self.csv_path.parent / "latency_recall.jpg")
 
         frame_delay = general_statistics.get_frame_delay(b_video_detection=binary_ground_truth,
                                                         b_audio_detection=detected,
@@ -219,7 +219,7 @@ class ZoneDetector:
         plt.plot(3-ground_truth)
         plt.plot(detected)
         plt.grid()
-        plt.show()
+        plt.savefig(self.csv_path.parent / "detected_x_ground_truth.jpg")
 
         results = {
             'Name': str(self.video).split('/')[-1],
@@ -397,7 +397,7 @@ class ZoneDetector:
         plt.subplot(1,2,2)
         plt.plot(3-closed_ground_truth, color='blue')
         plt.title("Grount Truth After Morphological Closing")
-        plt.show()
+        plt.savefig(self.csv_path.parent / "Ground_Truth_After_Closing.jpg")
         
 
         # ------------------------------------- Get Audio Detection -------------------------------------
@@ -437,7 +437,7 @@ class ZoneDetector:
         plt.title("Audio detection after resampling")
         plt.plot(detected_audio_video, color='red')
         plt.plot(3-closed_ground_truth, color='blue')
-        plt.show()
+        plt.savefig(self.csv_path.parent / "audio_resampling.jpg")
 
         results = self.extract_stats(ground_truth=closed_ground_truth, 
                                      detected=detected_audio_video, 

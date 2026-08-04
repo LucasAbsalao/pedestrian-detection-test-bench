@@ -151,7 +151,7 @@ class AudioHandler:
 
         amplitude = np.quantile(alarm_frequency_amplitudes[alarm_detection], q=0.05)
 
-        time_axis = np.arange(20, spectrogram.shape[1])
+        time_axis = np.arange(frames_offset, spectrogram.shape[1])
         plt.scatter(time_axis[alarm_detection], 
                     alarm_frequency_amplitudes[alarm_detection], 
                     color='red', label='Alarm', s=15)

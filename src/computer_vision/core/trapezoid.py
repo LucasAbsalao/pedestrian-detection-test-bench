@@ -1,12 +1,10 @@
 import cv2
 from pathlib import Path
 import yaml
-import sys
 import numpy as np
 from numpy.typing import NDArray
 from pathlib import Path
 from enum import Enum
-import argparse
 	
 from utils.draw import write_lines_from_points
 from.config import DATA_DIR

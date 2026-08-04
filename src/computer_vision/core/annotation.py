@@ -72,8 +72,14 @@ class VideoAnnotator:
         }
     
         count_frames = 0
+
+        if self.txt_output_path.suffix:
+            annotation_file_path = self.txt_output_path
+        else:
+            self.txt_output_path.mkdir(exist_ok=True, parents=True)
+            annotation_file_path = self.txt_output_path / f"yolo_{self.name}.txt"
     
-        with open(str(self.txt_output_path / f"yolo_{self.name}.txt"), "w") as f:
+        with open(annotation_file_path, "w") as f:
             while cap.isOpened():
                 success, im0 = cap.read()
     

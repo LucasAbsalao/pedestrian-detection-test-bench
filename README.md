@@ -63,10 +63,11 @@ La fumée et le document pour le PRE
 
 Which distortions should I use
 Put a light in front of the screen source éblouissante
-Aspect ratio
+Set a point as reference
 
 
 GX020079_00_3
+GX0200686 - Normal pedestrians
 
 Show before and after cv2 implementation
 Test with different resolutions
