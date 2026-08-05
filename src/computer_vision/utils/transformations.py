@@ -4,6 +4,7 @@ import numpy as np
 from numpy.typing import NDArray
 import cv2
 
+rng = np.random.default_rng()
 
 def fog(image: NDArray, depth_map: NDArray, minimum_distance: float,
         airlight: float | None = None, per_channel_airlight: bool = False) -> NDArray:
@@ -31,11 +32,16 @@ def fog(image: NDArray, depth_map: NDArray, minimum_distance: float,
     return new_image
 
 def gaussian_noise(image: NDArray, mean: float = 0.0, stdev: float = 0.2) -> NDArray:
-    noise = np.empty(image.shape, dtype=np.float32)
-
-    cv2.randn(dst=noise, mean=mean, stddev=stdev)
-
-    return cv2.add(image, noise, dtype=cv2.CV_8U)
+    noise = rng.standard_normal(size=image.shape, dtype=np.float32)
+    
+    noise *= stdev
+    noise += mean
+    
+    noise += image 
+    
+    np.clip(noise, 0, 255, out=noise)
+    
+    return noise.astype(image.dtype)
 
 def gaussian_blur(image: NDArray, kernel_size: int = 11, stdev: float = 0.) -> NDArray:
     new_image = cv2.GaussianBlur(image, ksize=(kernel_size, kernel_size), sigmaX=stdev, sigmaY=stdev)
