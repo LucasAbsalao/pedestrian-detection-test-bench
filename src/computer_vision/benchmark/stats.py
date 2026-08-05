@@ -2,6 +2,7 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.ndimage import binary_closing
 import math
+from typing import Optional
 
 class Stats:
     def __init__(self, general: bool = False) -> None:
@@ -54,6 +55,9 @@ class Stats:
             self.minimum_weight = 0.2
             self.sampling_la_recall = 1
             self.la_recall = 0.
+
+            self.frame_delay = []
+            self.seconds_delay = []
     
     def set_latency_parameters(self, alpha : float, beta: float, minimum_weight : float, sampling : int):
         self.alpha = alpha
@@ -92,32 +96,32 @@ class Stats:
         else:
             return 0.0
         
-    def calculate_precision(self) -> float:
+    def calculate_precision(self) -> Optional[float]:
         if self.tp + self.fp > 0:
             return self.tp / (self.tp + self.fp)
         else:
-            return 0.0
+            return None
         
-    def calculate_recall(self) -> float:
+    def calculate_recall(self) -> Optional[float]:
         if self.tp + self.fn > 0:
             return self.tp / (self.tp + self.fn)
         else:
-            return 0.0
+            return None
 
-    def calculate_f1_score(self) -> float:
+    def calculate_f1_score(self) -> Optional[float]:
         recall = self.calculate_recall()
         precision = self.calculate_precision()
-        if precision+recall>0:
-            return (2*precision*recall) / precision + recall
+        if precision is not None and recall is not None and (precision+recall)>0:
+            return (2*precision*recall) / (precision + recall)
         else:
-            return 0.0
+            return None
         
     
-    def calculate_weighted_recall(self) -> float:
+    def calculate_weighted_recall(self) -> Optional[float]:
         if self.weighted_fn + self.weighted_tp > 0 and self.general_purpose:
             return self.weighted_tp / (self.weighted_tp + self.weighted_fn)
         else:
-            return 0.0
+            return None
         
     def total_evaluations(self) -> int:
         return self.tp + self.tn + self.fp + self.fn
@@ -170,26 +174,36 @@ class Stats:
         return timestamps
 
     
-    def get_frame_delay(self, b_video_detection : NDArray, b_audio_detection : NDArray, window : int, closing_se_size : int):
+    def get_frame_delay(self, b_video_detection : NDArray, b_audio_detection : NDArray, window : int, closing_se_size : int) -> list[int]:
 
         if len(b_video_detection) != len(b_audio_detection):
             raise RuntimeError("Both vectors need to have the same size!")
 
         time_stamps = self.get_detection_duration_in_frames(ground_truth=b_video_detection, closing_se_size=closing_se_size)
+        if not time_stamps:
+            return []
 
         frame_delay = []
         for start_frame, end_frame in time_stamps:
 
             limit_sup = min(start_frame+window, len(b_video_detection))
-            detected = False
-            for i in range(start_frame, limit_sup):
-                if b_audio_detection[i] == 1:
-                    frame_delay.append(i-start_frame)
-                    detected = True
-                    break
 
-            if not detected:
+            detections = np.flatnonzero(b_audio_detection[start_frame:limit_sup])
+            if detections.size>0:
+                first_audio_detection = detections[0] + start_frame
+                frame_delay.append(first_audio_detection)
+            else:
                 frame_delay.append(window)
+
+            # detected = False
+            # for i in range(start_frame, limit_sup):
+            #     if b_audio_detection[i] == 1:
+            #         frame_delay.append(i-start_frame)
+            #         detected = True
+            #         break
+
+            # if not detected:
+            #     frame_delay.append(window)
                     
         self.frame_delay = frame_delay
         return frame_delay
@@ -199,18 +213,24 @@ class Stats:
         return idx
         
 
-    def get_seconds_delay(self, b_video_detection : NDArray, frame_seconds : NDArray, audio_detection : NDArray, audio_start_timestamp : float, audio_duration : float, window : int, closing_se_size : int):
+    def get_seconds_delay(self, b_video_detection : NDArray, frame_seconds : NDArray, audio_detection : NDArray, audio_start_timestamp : float, audio_duration : float, window : int, closing_se_size : int) -> list[float]:
 
         if len(b_video_detection) != len(frame_seconds):
                     raise RuntimeError("Both vectors of detection and timestamps need to have the same size!")
         
         time_stamps = self.get_detection_duration_in_frames(ground_truth=b_video_detection, closing_se_size=closing_se_size)
+        if not time_stamps:
+            return []
 
         sampling_period_in_seconds = audio_duration / len(audio_detection)
 
         second_delay = []
 
-        max_seconds_delay = (frame_seconds[-1] - frame_seconds[0])/(len(frame_seconds)-1) * window
+        if len(frame_seconds) > 1:
+            max_seconds_delay = (frame_seconds[-1] - frame_seconds[0])/(len(frame_seconds)-1) * window
+        else:
+            raise NotImplementedError("Can't evaluate videos with just one frame")
+            
         for start_frame, end_frame in time_stamps:
 
             limit_sup_frame = min(start_frame+window, len(frame_seconds)-1)
@@ -236,7 +256,7 @@ class Stats:
         return second_delay
 
 
-    def get_seconds_delay_vectorized(self, b_video_detection : NDArray, frame_seconds : NDArray, audio_detection : NDArray, audio_start_timestamp : float, audio_duration : float, window : int, closing_se_size : int, measure_from_end : bool = False):
+    def get_seconds_delay_vectorized(self, b_video_detection : NDArray, frame_seconds : NDArray, audio_detection : NDArray, audio_start_timestamp : float, audio_duration : float, window : int, closing_se_size : int, measure_from_end : bool = False) -> list[float]:
         """
         Vectorized, more robust version of get_seconds_delay.
 
@@ -273,6 +293,8 @@ class Stats:
         max_seconds_delay = frame_period * window
 
         time_stamps = self.get_detection_duration_in_frames(ground_truth=b_video_detection, closing_se_size=closing_se_size)
+        if not time_stamps:
+            return []
 
         second_delay = []
         for start_frame, end_frame in time_stamps:
@@ -305,7 +327,7 @@ class Stats:
     def latency_array(self, ground_truth : NDArray, predictions : NDArray, time_stamps : list):
     
         if self.sampling_la_recall != 1:
-            raise NotImplemented("Sampling different from one was not yet implemented")
+            raise NotImplementedError("Sampling different from one was not yet implemented")
 
         time_stamps = [[start, end]for start, end in time_stamps if start != end]
 
@@ -327,48 +349,105 @@ class Stats:
         return larec
     
     def calculate_latency_recall(self, ground_truth : NDArray, predictions : NDArray, 
-                                 closing_structure_size : int = 10) -> float:
+                                 closing_structure_size : int = 10) -> Optional[float]:
         
         if self.general_purpose:
             time_stamps = self.get_detection_duration_in_frames(ground_truth=ground_truth, closing_se_size=closing_structure_size)
+            if not time_stamps:
+                return None
 
             la_rec = self.latency_array(ground_truth=ground_truth,
                                     predictions = predictions,
                                     time_stamps=time_stamps          
             )
-            
-            positive_la_recall = la_rec[la_rec>0]
-            avg_la_recall = np.mean(positive_la_recall).astype(float) if positive_la_recall.size>0 else 0
-            self.la_recall = avg_la_recall
 
-            return avg_la_recall
+            la_rec_ground_truth = self.latency_array(ground_truth=ground_truth,
+                                                     predictions=ground_truth,
+                                                     time_stamps=time_stamps)
+            
+            sum_gt = np.sum(la_rec_ground_truth)
+            if sum_gt == 0:
+                return None
+
+            sum_la_rec = np.sum(la_rec)
+            final_la_recall = (sum_la_rec / sum_gt).astype(float)
+
+            self.la_recall = final_la_recall
+
+            return final_la_recall
         else:
-            return 0.0
+            return None
+
+    def calculate_latency_recall_mean(self, ground_truth : NDArray, predictions : NDArray, 
+                                     closing_structure_size : int = 10) -> float:
+            
+            if self.general_purpose:
+                time_stamps = self.get_detection_duration_in_frames(ground_truth=ground_truth, closing_se_size=closing_structure_size)
+    
+                la_rec = self.latency_array(ground_truth=ground_truth,
+                                        predictions = predictions,
+                                        time_stamps=time_stamps          
+                )
+                
+                positive_la_recall = la_rec[la_rec>0]
+                avg_la_recall = np.mean(positive_la_recall).astype(float) if positive_la_recall.size>0 else 0
+                self.la_recall = avg_la_recall
+    
+                return avg_la_recall
+            else:
+                return 0.0
             
     def __str__(self) -> str:
         absolute_variables = f"Hits (True Positive):        {self.tp}\n" + \
                              f"Misses (False Negatives):       {self.fn}\n" + \
                              f"False Alarms (False Positives): {self.fp}\n" + \
                              f"Correct Rejections (True Negatives): {self.tn}\n"
+
+        acc = self.calculate_accuracy()
+        prec = self.calculate_precision()
+        rec = self.calculate_recall()
+        f1 = self.calculate_f1_score()
+        pmiss = self.calculate_pmiss()
             
         separation = "-"*79 + "\n"
-        metrics = f"Accuracy:                               {self.calculate_accuracy()*100:.2f}% (How many detections were right)\n" + \
-                  f"Precision:                              {self.calculate_precision()*100:.2f}% (How reliable the detections were)\n" + \
-                  f"Recall:                                 {self.calculate_recall()*100:.2f}% (How many actual pedestrians were caught)\n" + \
-                  f"F1 Score:                               {self.calculate_f1_score()*100:.2f}% (Overall balance between detecting pedestrians and avoiding false alarms)\n" + \
-                  f"Miss Probability:                       {self.calculate_pmiss()*100:.2f}% (Missed Detection probability)\n"
+
+        metrics = f"Accuracy:                               {acc*100:.2f}% (How many detections were right)\n"
+
+        if prec is not None:
+            metrics += f"Precision:                              {prec*100:.2f}% (How reliable the detections were)\n"
+        else:
+            metrics += f"Precision:                              N/A (No actual pedestrians in video)\n"
+
+        if rec is not None:
+            metrics += f"Recall:                                 {rec*100:.2f}% (How many actual pedestrians were caught)\n"
+        else:
+            metrics += f"Recall:                                 N/A (No actual pedestrians in video)\n"
+
+        if f1 is not None:
+            metrics += f"F1 Score:                               {f1*100:.2f}% (Overall balance between detecting pedestrians and avoiding false alarms)\n"
+        else:
+            metrics += f"F1 Score:                               N/A (No actual pedestrians in video)\n"
+
+        
+        metrics += f"Miss Probability:                       {pmiss*100:.2f}% (Missed Detection probability)\n"
     
         if self.general_purpose:
             absolute_variables += f"Weighted True Positives: {self.weighted_tp}\n" + \
                                   f"Weighted False Negatives: {self.weighted_fn}\n" + \
                                   f"Frame Delays in Seconds: {self.seconds_delay}\n" + \
                                   f"Frame Delays in frames: {self.frame_delay}\n"
-            
+
+            w_rec = self.calculate_weighted_recall()
             metrics += f"False Alarm Probability:                {self.calculate_pfa()*100:.2f}% (False Alarm probability)\n" + \
                        f"False Alarm Rate:                       {self.r_fa*100:.2f} (False Alarm Rate in occurence per hour)\n" + \
-                       f"NDCR:                                   {self.calculate_ndcr():.2f} (Normalized Detection Cost Rate, a weighted combination)\n" + \
-                       f"WRecall:                                {self.calculate_weighted_recall()*100:.2f}% (How many actual pedestrian were caught with a bigger weight to closer detections)\n" + \
-                       f"LaRecall:                               {self.la_recall*100:.2f}% (How many actual pedestrian were caught with a bigger weight to early detections)\n"
+                       f"NDCR:                                   {self.calculate_ndcr():.2f} (Normalized Detection Cost Rate, a weighted combination)\n"
+
+            if w_rec is not None:
+                metrics += f"WRecall:                                {w_rec*100:.2f}% (How many actual pedestrian were caught with a bigger weight to closer detections)\n"
+            else:
+                metrics += f"WRecall:                                N/A (No actual pedestrians in video)\n"
+
+            metrics +=  f"LaRecall:                               {self.la_recall*100:.2f}% (How many actual pedestrian were caught with a bigger weight to early detections)\n"
             
         separation_2 = "="*79 + "\n"
 
