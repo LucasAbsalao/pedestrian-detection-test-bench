@@ -35,7 +35,8 @@ class ZoneDetector:
                  chunk : int = CHUNK,
                  format : int = FORMAT,
                  channels : int = CHANNELS,
-                 rate : int = RATE
+                 rate : int = RATE,
+                 save_audio : bool = False
                  ):
         
         self.show = show
@@ -60,6 +61,8 @@ class ZoneDetector:
                                format=format,
                                channels=channels,
                                rate=rate) 
+
+        self.save_audio = save_audio
     
     def _parse_predictions(self, txt_path: Path) -> dict:
         """Parse the predictions txt file into a dict: frame_num -> list of (zone, bbox)."""
@@ -417,7 +420,8 @@ class ZoneDetector:
         frequency, t, dbs = self.ah.spectrogram(audio_data=audio_data,
                                         seconds=audio_seconds)
 
-        self.ah.save_audio(output_path=str(self.csv_path.with_name("Detection_Audio.wav")))
+        if self.save_audio:
+            self.ah.save_audio(output_path=str(self.csv_path.with_name("Detection_Audio.wav")))
 
         self.ah.plot_spectrogram(frequency=frequency,
                             time_stamps=t,

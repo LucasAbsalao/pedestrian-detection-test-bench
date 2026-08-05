@@ -72,7 +72,7 @@ def evaluate():
     csv_path = args.csv
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
-    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path)
+    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path, save_audio=True)
 
     predictions = args.predictions
     predictions = predictions.resolve()
