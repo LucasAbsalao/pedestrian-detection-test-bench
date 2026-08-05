@@ -33,6 +33,8 @@ class VideoAnnotator:
 
         self.model = YOLO(str(model_path))
         self.project_path = predict_output_path.resolve()
+        self.project_path.mkdir(exist_ok=True, parents=True)
+
         self.classes = classes
         self.stream = stream
         self.save = save

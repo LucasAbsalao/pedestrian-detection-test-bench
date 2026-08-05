@@ -69,5 +69,10 @@ Set a point as reference
 GX020079_00_3
 GX0200686 - Normal pedestrians
 
-Show before and after cv2 implementation
+Show before and after cv2 implementation FIX
+Test with a point of the same size as the screen
 Test with different resolutions
+
+
+
+You should have ffmpeg installed

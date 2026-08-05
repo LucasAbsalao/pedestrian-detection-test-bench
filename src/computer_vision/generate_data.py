@@ -1,9 +1,8 @@
-import sys
 import argparse
 import yaml
 from pathlib import Path
 
-from core.config import DEFAULT_YOLO_MODEL, POINTS_CONFIG, ANNOTATION_DIR, DISTORTION_DIR, VIDEO_DIR, DATA_DIR
+from core.config import DEFAULT_YOLO_MODEL, POINTS_CONFIG, ANNOTATION_DIR, VIDEO_DIR, DATA_DIR
 
 from core.annotation import VideoAnnotator
 from core.augmentation import DistortionHandler, DistortionType
@@ -21,6 +20,12 @@ def parse_args() -> argparse.Namespace:
         help="Name of the generated dataset. Will be present at yaml."
     )
     parser.add_argument(
+        "--distortion",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="If enabled, distortions will be applied to the videos."
+    )
+    parser.add_argument(
         '--model',
         type = str,
         default = str(DEFAULT_YOLO_MODEL),
@@ -34,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--force",
-        type=bool,
+        action=argparse.BooleanOptionalAction,
         default=False,
         help="If set, erases any precedent annotation file for these videos."
     )
@@ -175,20 +180,21 @@ def generate():
             general_data['bbox_points'][str(file)] = list(point_data[str(file)])
         else:
             raise FileNotFoundError(f"Couldn't create annotation file for this video {str(file)}")
-            
-        print(f"Applying distortions to video {file}")
 
-        distortion_handler = DistortionHandler(video = file, codec = 'libx265_rawvideo')
+        if args.distortion:
+            print(f"Applying distortions to video {file}")
 
-        for distortion in distortions_str:
+            distortion_handler = DistortionHandler(video = file, codec = 'libx265_rawvideo')
 
-            distortion_path = apply_distortion(distortion_handler=distortion_handler,
-                                               file=file,
-                                               distortion=distortion,
-                                               force=args.force)
-            
-            general_data['data'][str(distortion_path)] = str(txt_path)
-            general_data['bbox_points'][str(distortion_path)] = list(point_data[str(file)])
+            for distortion in distortions_str:
+
+                distortion_path = apply_distortion(distortion_handler=distortion_handler,
+                                                file=file,
+                                                distortion=distortion,
+                                                force=args.force)
+                
+                general_data['data'][str(distortion_path)] = str(txt_path)
+                general_data['bbox_points'][str(distortion_path)] = list(point_data[str(file)])
 
 
     with open(str(DATA_DIR / f'{args.name}.yaml'), "w") as yaml_file:

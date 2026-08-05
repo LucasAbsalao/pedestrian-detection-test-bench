@@ -1,5 +1,3 @@
-import numpy as np
-import sys
 import argparse
 import yaml
 from pathlib import Path
@@ -71,7 +69,7 @@ def evaluate():
 
     count_videos = 1
 
-    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path)
+    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path, delay_window=90)
 
     for file in mp4_files:
         print("="*30 + f" EVALUATING VIDEO {count_videos}: {file.stem.upper()} " + "="*30 + "\n")

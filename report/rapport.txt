@@ -7,7 +7,13 @@ Explain the moiré and the flickering effect
 
 Explain the acquisition that we did close to other cameras (Say that a big problem is that people cannot pass behind the excavator since it is prohibited)
 Show that GoPro Big Angle was the best one to do it
-
+ 
 Compare 4K with full HD
 Audio detection (Naive and improved versions)
 Compare with different distortions
+
+Say that in interviews, people say that miss detection is worst than false alarm
+
+Comment about modifications in the latency recall -> Improvement (More than 1 detection in a single video) and 
+
+370, 100, 94, 75

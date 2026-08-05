@@ -118,6 +118,8 @@ class AudioHandler:
         plt.tight_layout()
         plt.show()
 
+        plt.close()
+
     def spectrogram(self, audio_data, seconds : float, dbs = None):
         f, t, Sxx = signal.spectrogram(audio_data, int(len(audio_data)/seconds), nperseg=int(len(audio_data)/seconds/self.nperseg)) #Standard 255
 
@@ -131,12 +133,14 @@ class AudioHandler:
         return f, t, Sxx
 
     def plot_spectrogram(self, frequency, time_stamps, spectrogram, filepath:str, show=True):
+        plt.figure()
         plt.pcolormesh(time_stamps, frequency, spectrogram)
         plt.ylabel('Frequency [dBS]')
         plt.xlabel('Time [sec]')
         plt.savefig(filepath)
         if show:
             plt.show()
+        plt.close()
 
     def detection_frequency(self, spectrogram, frequency, frames_offset:int=20, save_plot : Path = Path("amplitude_threshold.jpg")):
 
@@ -152,6 +156,8 @@ class AudioHandler:
         amplitude = np.quantile(alarm_frequency_amplitudes[alarm_detection], q=0.05)
 
         time_axis = np.arange(frames_offset, spectrogram.shape[1])
+
+        plt.figure()
         plt.scatter(time_axis[alarm_detection], 
                     alarm_frequency_amplitudes[alarm_detection], 
                     color='red', label='Alarm', s=15)
@@ -164,6 +170,7 @@ class AudioHandler:
         plt.title("Detecting amplitude threshold")
         plt.savefig(str(save_plot))
         plt.show()
+        plt.close()
 
         return frequency[f_idx], amplitude
     
@@ -181,6 +188,7 @@ class AudioHandler:
 
         alarm_spectrogram = Sxx[frequencies_idx, :]
 
+        plt.figure()
         plt.subplot(2,1,1)
         max_amplitude = np.max(alarm_spectrogram, axis=0)
         plt.title("max_amplitude_at_alarm_frequency")
@@ -192,8 +200,9 @@ class AudioHandler:
         plt.title("mean_amplitude_at_alarm_frequency")
 
         if save_plot is not None:
-            plt.savefig(str(save_plot))
-        plt.show()
+            plt.savefig(str(save_plot / "Mean_Max_Amplitude_at_Alarm_Frequency.jpg"))
+
+        plt.close()
 
         max_amplitude_alarm_sxx = np.max(alarm_spectrogram, axis=0)
 
@@ -220,11 +229,9 @@ class AudioHandler:
 
 
     def resample_detection(self, video_time_array, binary_detection):
-        print(video_time_array)
         video_audio_b_detection = np.zeros(video_time_array.shape, dtype=int)
         
         valid_frames = self.valid_video_frames(video_time_array=video_time_array)
-        print("Valid frames: ", valid_frames)
 
         period = self.record_duration / len(binary_detection)
 

@@ -12,7 +12,7 @@ import pyaudio
 import threading
     
 from computer_vision.utils.draw import write_lines, draw_bboxes_from_data
-from core.audio_handler import AudioHandler
+from computer_vision.core.audio_handler import AudioHandler
 from computer_vision.utils.transformations import resize,  continuous_morphological_closing
 from computer_vision.utils.video import get_video_parameters
 from computer_vision.benchmark.stats import Stats
@@ -122,6 +122,9 @@ class ZoneDetector:
 
         self.predictions = self._parse_predictions(self.predictions_path)
 
+        self.log_folder = self.csv_path.parent / self.video.stem
+        self.log_folder.mkdir(exist_ok=True, parents=True)
+
 
 
     # ------------------------------------- Generate Statistics -------------------------------------
@@ -167,12 +170,13 @@ class ZoneDetector:
         la_recall = general_statistics.calculate_latency_recall(ground_truth = binary_ground_truth,
                                                                 predictions = detected,
                                                                 closing_structure_size=self.close_detection_gaps)
-        
 
+        plt.figure()
         plt.plot(class_la_array)
         plt.title("Latency Recall Evaluation")
         plt.vlines(time_stamps, 0, 1 + minimum_weight, linestyles='dashed')
-        plt.savefig(self.csv_path.parent / "latency_recall.jpg")
+        plt.savefig(self.log_folder / "Latency_Recall.jpg")
+        plt.close()
 
         frame_delay = general_statistics.get_frame_delay(b_video_detection=binary_ground_truth,
                                                         b_audio_detection=detected,
@@ -215,14 +219,16 @@ class ZoneDetector:
         print("-"*40 + " Red Statistics " + "-"*40)
         print(statistics_per_zone['red'])
 
-
+        plt.figure()
         plt.plot(3-ground_truth)
         plt.plot(detected)
         plt.grid()
-        plt.savefig(self.csv_path.parent / "detected_x_ground_truth.jpg")
+        plt.savefig(self.log_folder / "Detected_X_Ground_Truth.jpg")
+        plt.close()
 
         results = {
             'Name': str(self.video).split('/')[-1],
+            'Has_Pedestrians': (general_statistics.tp + general_statistics.fn) > 0,
             'Accuracy': general_statistics.calculate_accuracy(),
             'Precision': general_statistics.calculate_precision(),
             'Recall': general_statistics.calculate_recall(),
@@ -390,14 +396,17 @@ class ZoneDetector:
         closed_ground_truth = continuous_morphological_closing(3-ground_truth, 21)
         closed_ground_truth = (3-closed_ground_truth).astype(int)
 
+        plt.figure()
         plt.subplot(1,2,1)
         plt.plot(3-ground_truth, color='red')
         plt.title("Original Grount Truth")
         
         plt.subplot(1,2,2)
         plt.plot(3-closed_ground_truth, color='blue')
-        plt.title("Grount Truth After Morphological Closing")
-        plt.savefig(self.csv_path.parent / "Ground_Truth_After_Closing.jpg")
+        plt.title("Ground Truth After Morphological Closing")
+        plt.savefig(self.log_folder / "Ground_Truth_After_Closing.jpg")
+
+        plt.close()
         
 
         # ------------------------------------- Get Audio Detection -------------------------------------
@@ -408,19 +417,21 @@ class ZoneDetector:
         frequency, t, dbs = self.ah.spectrogram(audio_data=audio_data,
                                         seconds=audio_seconds)
 
-        self.ah.save_audio(output_path=str(self.csv_path.with_name("detection_audio.wav")))
+        self.ah.save_audio(output_path=str(self.csv_path.with_name("Detection_Audio.wav")))
 
         self.ah.plot_spectrogram(frequency=frequency,
                             time_stamps=t,
                             spectrogram=dbs,
-                            filepath=str(self.csv_path.parent / "spectrogram_detection.jpg"))
+                            show=False,
+                            filepath=str(self.log_folder / "Spectrogram_Detection.jpg"))
 
         if isinstance(self.alarm_frequency, float) and isinstance(self.alarm_amplitude, float):
             binary_detection = self.ah.get_binary_detection(audio_data=audio_data,
                                                         alarm_frequency=self.alarm_frequency,
                                                         amp_threshold=self.alarm_amplitude,
                                                         interval=0.05,
-                                                        seconds=audio_seconds)
+                                                        seconds=audio_seconds,
+                                                        save_plot=self.log_folder)
         else:
             raise ValueError("Alarm Frequency and Alarm Amplitude should be floating points numbers")
 
@@ -429,6 +440,7 @@ class ZoneDetector:
 
         detected_audio_video = self.ah.resample_detection(frame_time, final_detection)
 
+        plt.figure()
         plt.subplot(1,2,1)
         plt.title("Audio detection")
         plt.plot(final_detection, color='red')
@@ -437,7 +449,9 @@ class ZoneDetector:
         plt.title("Audio detection after resampling")
         plt.plot(detected_audio_video, color='red')
         plt.plot(3-closed_ground_truth, color='blue')
-        plt.savefig(self.csv_path.parent / "audio_resampling.jpg")
+        plt.savefig(self.log_folder / "Audio_Resampling.jpg")
+
+        plt.close()
 
         results = self.extract_stats(ground_truth=closed_ground_truth, 
                                      detected=detected_audio_video, 

@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 from pathlib import Path
 from enum import Enum
 	
-from utils.draw import write_lines_from_points
+from computer_vision.utils.draw import write_lines_from_points
 from.config import DATA_DIR
 
 class MarkState(Enum):
