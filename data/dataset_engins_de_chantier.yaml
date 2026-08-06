@@ -1,251 +1,66 @@
 bbox_points:
-  /home/lucas/Documents/computer_vision/data/videos/GX010079_01_4.mp4:
-  - 425
-  - 2028
-  - 1244
-  - 653
-  /home/lucas/Documents/computer_vision/data/videos/GX010080_00_5.mp4:
-  - 532
-  - 1834
-  - 1037
-  - 695
-  /home/lucas/Documents/computer_vision/data/videos/GoLive1.mp4:
-  - 492
-  - 575
-  - 549
-  - 441
-  /home/lucas/Documents/computer_vision/data/videos/GoLive2.mp4:
-  - 520
-  - 559
-  - 572
-  - 439
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_dirt.mp4:
-  - 425
-  - 2028
-  - 1244
-  - 653
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_fog.mp4:
-  - 425
-  - 2028
-  - 1244
-  - 653
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_blur.mp4:
-  - 425
-  - 2028
-  - 1244
-  - 653
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_noise.mp4:
-  - 425
-  - 2028
-  - 1244
-  - 653
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_noise_conv.mp4:
-  - 425
-  - 2028
-  - 1244
-  - 653
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_rain.mp4:
-  - 425
-  - 2028
-  - 1244
-  - 653
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_salt_and_pepper.mp4:
-  - 425
-  - 2028
-  - 1244
-  - 653
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_dirt.mp4:
-  - 532
-  - 1834
-  - 1037
-  - 695
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_fog.mp4:
-  - 532
-  - 1834
-  - 1037
-  - 695
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_gaussian_blur.mp4:
-  - 532
-  - 1834
-  - 1037
-  - 695
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_gaussian_noise.mp4:
-  - 532
-  - 1834
-  - 1037
-  - 695
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_gaussian_noise_conv.mp4:
-  - 532
-  - 1834
-  - 1037
-  - 695
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_rain.mp4:
-  - 532
-  - 1834
-  - 1037
-  - 695
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_salt_and_pepper.mp4:
-  - 532
-  - 1834
-  - 1037
-  - 695
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_dirt.mp4:
-  - 492
-  - 575
-  - 549
-  - 441
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_fog.mp4:
-  - 492
-  - 575
-  - 549
-  - 441
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_gaussian_blur.mp4:
-  - 492
-  - 575
-  - 549
-  - 441
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_gaussian_noise.mp4:
-  - 492
-  - 575
-  - 549
-  - 441
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_gaussian_noise_conv.mp4:
-  - 492
-  - 575
-  - 549
-  - 441
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_rain.mp4:
-  - 492
-  - 575
-  - 549
-  - 441
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_salt_and_pepper.mp4:
-  - 492
-  - 575
-  - 549
-  - 441
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_dirt.mp4:
-  - 520
-  - 559
-  - 572
-  - 439
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_fog.mp4:
-  - 520
-  - 559
-  - 572
-  - 439
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_gaussian_blur.mp4:
-  - 520
-  - 559
-  - 572
-  - 439
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_gaussian_noise.mp4:
-  - 520
-  - 559
-  - 572
-  - 439
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_gaussian_noise_conv.mp4:
-  - 520
-  - 559
-  - 572
-  - 439
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_rain.mp4:
-  - 520
-  - 559
-  - 572
-  - 439
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_salt_and_pepper.mp4:
-  - 520
-  - 559
-  - 572
-  - 439
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_dirt.mp4:
-  - 490
-  - 840
-  - 627
-  - 656
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_fog.mp4:
-  - 490
-  - 840
-  - 627
-  - 656
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_gaussian_blur.mp4:
-  - 490
-  - 840
-  - 627
-  - 656
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_gaussian_noise.mp4:
-  - 490
-  - 840
-  - 627
-  - 656
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_gaussian_noise_conv.mp4:
-  - 490
-  - 840
-  - 627
-  - 656
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_rain.mp4:
-  - 490
-  - 840
-  - 627
-  - 656
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_salt_and_pepper.mp4:
-  - 490
-  - 840
-  - 627
-  - 656
-  /home/lucas/Documents/computer_vision/data/videos/marcher_180.mp4:
-  - 490
-  - 840
-  - 627
-  - 656
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_00_1.mp4:
+  - 364
+  - 1054
+  - 697
+  - 507
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_dirt.mp4:
+  - 364
+  - 1054
+  - 697
+  - 507
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_fog.mp4:
+  - 364
+  - 1054
+  - 697
+  - 507
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_gaussian_blur.mp4:
+  - 364
+  - 1054
+  - 697
+  - 507
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_gaussian_noise.mp4:
+  - 364
+  - 1054
+  - 697
+  - 507
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_gaussian_noise_conv.mp4:
+  - 364
+  - 1054
+  - 697
+  - 507
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_rain.mp4:
+  - 364
+  - 1054
+  - 697
+  - 507
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_salt_and_pepper.mp4:
+  - 364
+  - 1054
+  - 697
+  - 507
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_smoke.mp4:
+  - 364
+  - 1054
+  - 697
+  - 507
 data:
-  /home/lucas/Documents/computer_vision/data/videos/GX010079_01_4.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
-  /home/lucas/Documents/computer_vision/data/videos/GX010080_00_5.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_5.txt
-  /home/lucas/Documents/computer_vision/data/videos/GoLive1.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive1.txt
-  /home/lucas/Documents/computer_vision/data/videos/GoLive2.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive2.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_dirt.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_fog.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_blur.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_noise.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_noise_conv.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_rain.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_salt_and_pepper.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_dirt.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_5.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_fog.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_5.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_gaussian_blur.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_5.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_gaussian_noise.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_5.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_gaussian_noise_conv.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_5.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_rain.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_5.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_5_salt_and_pepper.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_5.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_dirt.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive1.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_fog.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive1.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_gaussian_blur.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive1.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_gaussian_noise.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive1.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_gaussian_noise_conv.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive1.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_rain.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive1.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive1_salt_and_pepper.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive1.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_dirt.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive2.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_fog.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive2.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_gaussian_blur.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive2.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_gaussian_noise.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive2.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_gaussian_noise_conv.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive2.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_rain.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive2.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/GoLive2_salt_and_pepper.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GoLive2.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_dirt.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_marcher_180.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_fog.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_marcher_180.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_gaussian_blur.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_marcher_180.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_gaussian_noise.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_marcher_180.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_gaussian_noise_conv.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_marcher_180.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_rain.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_marcher_180.txt
-  /home/lucas/Documents/computer_vision/data/videos/distortions/marcher_180_salt_and_pepper.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_marcher_180.txt
-  /home/lucas/Documents/computer_vision/data/videos/marcher_180.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_marcher_180.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_00_1.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_dirt.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_fog.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_gaussian_blur.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_gaussian_noise.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_gaussian_noise_conv.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_rain.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_salt_and_pepper.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_1_smoke.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_1.txt
 distortions:
 - gaussian_noise
 - gaussian_noise_conv
 - gaussian_blur
-- fog
+- smoke
 - salt_and_pepper
 - rain
 - dirt
+- fog
 name: dataset_engins_de_chantier

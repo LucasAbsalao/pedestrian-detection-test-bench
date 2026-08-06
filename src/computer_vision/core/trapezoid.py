@@ -73,8 +73,12 @@ class TrapezoidMarker:
 
 
 	def run(self) -> NDArray | None:
-		cv2.namedWindow("Video Frame")
+		cv2.namedWindow("Video Frame", cv2.WND_PROP_FULLSCREEN)
 		cv2.setMouseCallback("Video Frame", self.mark_callback)
+
+		cv2.waitKey(500)
+		cv2.setWindowProperty("Zone Counter",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+		cv2.waitKey(500)
 
 		while True:
 			if self.next_frame:

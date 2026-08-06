@@ -417,8 +417,7 @@ class ZoneDetector:
 
         audio_seconds = len(audio_data) / self.ah.rate
 
-        frequency, t, dbs = self.ah.spectrogram(audio_data=audio_data,
-                                        seconds=audio_seconds)
+        frequency, t, dbs = self.ah.spectrogram(audio_data=audio_data)
 
         if self.save_audio:
             self.ah.save_audio(output_path=str(self.csv_path.with_name("Detection_Audio.wav")))

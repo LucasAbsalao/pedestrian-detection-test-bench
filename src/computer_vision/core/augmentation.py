@@ -74,9 +74,11 @@ class DistortionHandler:
 
         self.distortion = distortion
 
-        self.model = self._init_depth_model if self.distortion == DistortionType.FOG else None
+        self.model = self._init_depth_model() if self.distortion == DistortionType.FOG or self.distortion == DistortionType.SMOKE else None
 
-    def apply_function(self, image : NDArray, parameters : dict, depth_model=None):
+        self.encoder_details = True if self.distortion ==DistortionType.GAUSSIAN_NOISE or self.distortion == DistortionType.SALT_AND_PEPPER else False
+
+    def apply_function(self, image : NDArray, parameters : dict):
     
             if self.distortion == DistortionType.GAUSSIAN_NOISE:
                 new_image = gaussian_noise(image, **parameters.get(self.distortion.value, {}))
@@ -92,11 +94,18 @@ class DistortionHandler:
     
             elif self.distortion == DistortionType.CONVOLVED_SALT_AND_PEPPER:
                 new_image = salt_and_pepper_conv(image, **parameters.get(self.distortion.value, {}))
-    
+
+            elif self.distortion == DistortionType.SMOKE:
+                if self.model is None:
+                    raise ValueError("A depth model needs to be instanced to apply the smoke distortion. Recommended: DepthAnything2")
+                depth = self.model.infer_image(image)
+                new_image = fog(image = image, depth_map = depth, **parameters.get(self.distortion.value, {}))
+                new_image = np.clip(new_image,0,255).astype(np.uint8)
+
             elif self.distortion == DistortionType.FOG:
-                if depth_model is None:
+                if self.model is None:
                     raise ValueError("A depth model needs to be instanced to apply the fog distortion. Recommended: DepthAnything2")
-                depth = depth_model.infer_image(image)
+                depth = self.model.infer_image(image)
                 new_image = fog(image = image, depth_map = depth, **parameters.get(self.distortion.value, {}))
                 new_image = np.clip(new_image,0,255).astype(np.uint8)
     
@@ -149,7 +158,7 @@ class DistortionHandler:
                     if not success:
                         break
                     
-                    new_img = self.apply_function(image = im0, parameters = self.params, depth_model=self.model)
+                    new_img = self.apply_function(image = im0, parameters = self.params)
 
                     if self.codec == "libx265_rawvideo":
                         if process.stdin is not None:
@@ -188,8 +197,8 @@ class DistortionHandler:
             self._transform_any_codec_to_libx265(temp_video_path=video_write_path, final_video_path=dest_file)
 
         end_time = time.perf_counter()
-
-        print(f"Time to apply the {self.distortion.value} distortion was {end_time - start_time} seconds")
+        with open(self.output_path / 'time.txt', "a") as time_file:
+            time_file.write(f"{self.distortion.value}  {(end_time - start_time)/count_frames}\n")
 
 
     def _init_depth_model(self):
@@ -232,12 +241,17 @@ class DistortionHandler:
             'ffmpeg', 
             '-y', # Sobrescreve o arquivo final se ele já existir
             '-loglevel', 'error', # Esconde os textos chatos do ffmpeg, mostra só erros
-            '-i', temp_video_path, 
-            '-vcodec', 'libx265', 
+            '-hwaccel', 'cuda',
+            '-i', str(temp_video_path), 
 
-            '-pix_fmt', 'yuv444p',
-            '-crf', '17',
-            final_video_path
+            # --- GPU ENCODER SETTINGS ---
+            '-c:v', 'hevc_nvenc', 
+            '-preset', 'p6', 
+            '-cq', '17',           # NVENC Constant Quality
+
+            '-c:a', 'copy',
+            
+            str(final_video_path)
         ]
 
         subprocess.run(subprocess_commands, check=True)
@@ -246,9 +260,24 @@ class DistortionHandler:
             os.remove(str(temp_video_path))
 
     def _init_libx265_rawvideo_process(self, final_video_path : Path, width : int, height : int, fps : int):
+        pix_fmt = 'yuv420p'
+        rate_control = ['-rc', 'vbr', '-cq', '20']
+        b_frames = []
+        profile = ['-profile:v', 'main']
+
+        # Used for preserving high frequency details in video. In this case, for Salt and Pepper and Gaussian Noise distortions 
+        if self.encoder_details:
+            pix_fmt = 'yuv420p'
+
+            rate_control = ['-rc', 'constqp', '-qp', '17'] 
+            b_frames = [] #['-bf', '0']
+            profile = ['-profile:v', 'rext']
+
+
         comando_ffmpeg = [
             'ffmpeg',
             '-y',
+            # --- INPUT SETTINGS (From Python/OpenCV) ---
             '-f', 'rawvideo',       
             '-vcodec', 'rawvideo',
             '-s', f'{width}x{height}',             
@@ -256,18 +285,28 @@ class DistortionHandler:
             '-r', str(fps),               
             '-i', '-',                    
 
+            # --- COLORSPACE ---
             '-color_primaries', 'bt709',
             '-colorspace', 'bt709',
             '-color_trc', 'bt709',
             '-sws_flags', 'accurate_rnd+bitexact',
             
-            '-vcodec', 'libx265',
-            '-crf', '17',
-            '-preset', 'fast',       
-            '-pix_fmt', 'yuv444p',
-            str(final_video_path)
+            # --- GPU ENCODER SETTINGS ---
+            '-c:v', 'hevc_nvenc',
+            '-preset', 'p6',          
+            '-pix_fmt', pix_fmt,
+
+            # NVENC specific flags to disable adaptive quantization smoothing 
+            '-spatial-aq', '0',
+            '-temporal-aq', '0', 
+
         ]
+        comando_ffmpeg.extend(rate_control)
+        comando_ffmpeg.extend(b_frames)
+        comando_ffmpeg.extend(profile)
         
+        comando_ffmpeg.append(str(final_video_path))
+
         process = subprocess.Popen(comando_ffmpeg, stdin=subprocess.PIPE, stderr=subprocess.DEVNULL)
         return process 
 
@@ -276,10 +315,11 @@ class DistortionHandler:
         return ['gaussian_noise', 
                 'gaussian_noise_conv', 
                 'gaussian_blur',
-                'fog', 
+                'smoke', 
                 'salt_and_pepper', 
                 'rain',
-                'dirt']
+                'dirt',
+                'fog']
 
     def create_distortions_parameters(self):
         params = {

@@ -190,7 +190,7 @@ class Stats:
 
             detections = np.flatnonzero(b_audio_detection[start_frame:limit_sup])
             if detections.size>0:
-                first_audio_detection = detections[0] + start_frame
+                first_audio_detection = int(detections[0])
                 frame_delay.append(first_audio_detection)
             else:
                 frame_delay.append(window)

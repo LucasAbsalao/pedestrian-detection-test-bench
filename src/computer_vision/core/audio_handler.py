@@ -17,7 +17,7 @@ class AudioHandler:
                  format : int = FORMAT,
                  channels : int = CHANNELS,
                  rate : int = RATE,
-                 nperseg_factor : int = 100,
+                 nperseg_factor : int = 114,
                  dbs : bool = True) -> None:
         
         self.pyaudio = pyaudio.PyAudio()
@@ -32,7 +32,7 @@ class AudioHandler:
         self.channels = channels  
         self.rate = rate      
         self.dbs = dbs
-        self.nperseg = nperseg_factor
+        self.time_samples_per_seg = nperseg_factor
         
 
     def record_audio(self, seconds):
@@ -120,11 +120,13 @@ class AudioHandler:
 
         plt.close()
 
-    def spectrogram(self, audio_data, seconds : float, dbs = None):
-        f, t, Sxx = signal.spectrogram(audio_data, int(len(audio_data)/seconds), nperseg=int(len(audio_data)/seconds/self.nperseg)) #Standard 255
+    def spectrogram(self, audio_data, dbs = None):
+        nperseg = int((8*self.rate) / (7*self.time_samples_per_seg + 1))
+
+        f, t, Sxx = signal.spectrogram(audio_data, self.rate, nperseg=nperseg) # Standard value 255
 
         if dbs or (dbs is None and self.dbs):
-            Sxx = 10 * np.log10(Sxx)
+            Sxx = 10 * np.log10(Sxx + 1e-10)
 
         print("Frequency size: ", f.shape)
         print("Time quantization: ", t.shape)
@@ -176,7 +178,7 @@ class AudioHandler:
     
     def get_binary_detection(self, audio_data, alarm_frequency:float, amp_threshold:float, interval:float, seconds:float, save_plot : Path | None = None):
 
-        f, t, Sxx = self.spectrogram(audio_data=audio_data, seconds=seconds)
+        f, t, Sxx = self.spectrogram(audio_data=audio_data)
 
         inf_detection = (1.0-interval)*alarm_frequency
         sup_detection = (1.0+interval)*alarm_frequency

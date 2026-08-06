@@ -92,8 +92,7 @@ class AlarmCalibrator:
 
         self.ah.plot_audio_stream(audio_data=audio_data, seconds=self.record_seconds)
 
-        f, t, dbs = self.ah.spectrogram(audio_data=audio_data,
-                                seconds=self.record_seconds)
+        f, t, dbs = self.ah.spectrogram(audio_data=audio_data)
 
         self.ah.plot_spectrogram(frequency=f,
                             time_stamps=t,
