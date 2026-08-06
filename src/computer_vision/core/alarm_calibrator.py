@@ -121,7 +121,7 @@ class AlarmCalibrator:
                                                         amp_threshold=amplitude,
                                                         interval=0.02,
                                                         seconds=self.record_seconds,
-                                                        save_plot=self.save_dir / "mean_max_amplitude_at_alarm_frequency.png")
+                                                        save_plot=self.save_dir)
 
         if binary_detection.shape[0] == 0:
             print("Something went wrong with detection and we couldn't find a frequency in the same range " \

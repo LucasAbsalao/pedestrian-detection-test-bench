@@ -17,3 +17,5 @@ Say that in interviews, people say that miss detection is worst than false alarm
 Comment about modifications in the latency recall -> Improvement (More than 1 detection in a single video) and 
 
 370, 100, 94, 75
+
+To illustrate why to use points directly show /GX020128_02_2, because the guy is under a mount so the danger zone is much smaller!!!!!

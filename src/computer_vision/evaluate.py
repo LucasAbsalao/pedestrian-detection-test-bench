@@ -25,13 +25,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--alarm",
-        type=Path,
-        default=ALARM_CONFIG,
-        help="Path to the alarm configuration file."
+        type=str,
+        required=True,
+        help="Name of the alarm. This will be used to search for the alarm detection frequency"
     )
     parser.add_argument(
         "--distortion",
-        type=bool,
+        action=argparse.BooleanOptionalAction,
         default=True,
         help="If set to true, every single distorted video will also be put to test."
     )
@@ -59,6 +59,7 @@ def evaluate():
         mp4_files = list(video_dir.rglob("*.mp4"))
     else:
         mp4_files = list(video_dir.glob("*.mp4"))
+
     print("List of videos to be evaluated:")
     for file in mp4_files:
         print(str(file)) 
@@ -69,7 +70,7 @@ def evaluate():
 
     count_videos = 1
 
-    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path, delay_window=90)
+    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path, delay_window=90, close_detection_gaps=30)
 
     for file in mp4_files:
         print("="*30 + f" EVALUATING VIDEO {count_videos}: {file.stem.upper()} " + "="*30 + "\n")
@@ -80,7 +81,7 @@ def evaluate():
         print(f"\nVideo Path: {file}")
 
         zone_detector.detect_zones(video = file,
-                                   predictions = general_data['data'][str(file)],
+                                   predictions = Path(general_data['data'][str(file)]),
                                    point_d = (bbox_points[0], bbox_points[1]),
                                    point_u = (bbox_points[2], bbox_points[3]))
 

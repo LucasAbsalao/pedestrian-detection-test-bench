@@ -1,11 +1,11 @@
 '''
 To execute:
     python3 evaluate_1_video.py \
-    --video /home/lucas/Documents/computer_vision/data/videos/distortions/GX010079_01_4_gaussian_noise.mp4 \
-    --predictions /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010079_01_4.txt \
-    --point-d 245 2028     --point-u 1244 653 \
-    --csv test/results.csv \
-    --alarm blaxtair_smartphone
+    --video /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_2_salt_and_pepper.mp4 \
+    --predictions /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_2.txt \
+    --point-d 298 938     --point-u 685 275 \
+    --csv test_sp/results.csv \
+    --alarm blaxtair_real
 '''
 import argparse
 from pathlib import Path

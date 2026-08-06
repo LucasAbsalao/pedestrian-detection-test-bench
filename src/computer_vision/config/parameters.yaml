@@ -8,7 +8,7 @@ dirt:
   sigma: 29
 fog:
   airlight: 245
-  minimum_distance: 12
+  minimum_distance: 18
   per_channel_airlight: false
 smoke:
   airlight: 128
@@ -19,19 +19,19 @@ gaussian_blur:
   stdev: 0.0
 gaussian_noise:
   mean: 0.0
-  stdev: 80.0
+  stdev: 70.0
 gaussian_noise_conv:
-  kernel_size: 19
+  kernel_size: 17
   mean: 0.0
-  stdev: 140.0
+  stdev: 180.0
 rain:
   additive: true
   decay_factor: 0.98
   event_probability: 0.3
   kernel_factor: 150
-  kernel_size: 201
+  kernel_size: 321
   old_noise: null
-  sigma: 39
+  sigma: 59
 salt_and_pepper:
   pepper_prob: 0.03
   salt_prob: 0.03

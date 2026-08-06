@@ -219,6 +219,7 @@ __marimo__/
 
 # Local Repos
 src/computer_vision/predict/
+/data/predict
 /videos/
 
 # Ignored Extensions

@@ -31,7 +31,7 @@ class ZoneDetector:
                  csv : Path = Path("results.csv"),
                  alarm_config : Path = ALARM_CONFIG,
                  close_detection_gaps : int = 20,
-                 delay_window : int = 45,
+                 delay_window : int = 60,
                  chunk : int = CHUNK,
                  format : int = FORMAT,
                  channels : int = CHANNELS,
@@ -45,6 +45,8 @@ class ZoneDetector:
 
         self.alarm_name = alarm
         self.alarm_path = alarm_config.resolve()
+
+        print(self.alarm_path)
         self.alarm_frequency, self.alarm_amplitude = self._get_alarm_frequency(self.alarm_name, self.alarm_path)
 
         if self.alarm_frequency is None:
@@ -54,15 +56,14 @@ class ZoneDetector:
 
         # Corresponds to how many frames the system can ignore to consider a single detection extract
         self.close_detection_gaps = close_detection_gaps
-        self.window = delay_window
-
-        # Audio Handler
-        self.ah = AudioHandler(chunk=chunk,
-                               format=format,
-                               channels=channels,
-                               rate=rate) 
+        self.window = delay_window 
 
         self.save_audio = save_audio
+
+        self.chunk = chunk
+        self.rate = rate
+        self.format = format
+        self.channels = channels
     
     def _parse_predictions(self, txt_path: Path) -> dict:
         """Parse the predictions txt file into a dict: frame_num -> list of (zone, bbox)."""
@@ -87,11 +88,13 @@ class ZoneDetector:
         return predictions
 
     def _get_alarm_frequency(self, alarm_name : str, filepath : Path) -> tuple[None, None] | tuple[float, float]:
+        alarm_name = alarm_name.strip() 
+
         if filepath.exists():
             with open(filepath, "r") as yaml_file:
                 data_alarm = yaml.safe_load(yaml_file) or {}
             if data_alarm:
-                if alarm_name in list(data_alarm.keys()):
+                if alarm_name in data_alarm:
                     print("Alarm found: ")
                     print(data_alarm[alarm_name])
                     return data_alarm[alarm_name]['frequency'], data_alarm[alarm_name]['amplitude']
@@ -127,6 +130,12 @@ class ZoneDetector:
 
         self.log_folder = self.csv_path.parent / self.video.stem
         self.log_folder.mkdir(exist_ok=True, parents=True)
+
+        # Audio Handler
+        self.ah = AudioHandler(chunk=self.chunk,
+                                format=self.format,
+                                channels=self.channels,
+                                rate=self.rate)
 
 
 
@@ -294,17 +303,18 @@ class ZoneDetector:
 
         delay_stats = self._extract_delays(frame_delay=frame_delay, seconds_delay=seconds_delay)
 
-        if delay_csv_file_path.exists():
-            with open(delay_csv_file_path, "a", newline='') as csvfile:
-                print("Adding delays to existing file...")
-                writer = csv.DictWriter(csvfile, fieldnames=list(delay_stats[0].keys()))
-                writer.writerows(delay_stats)
-        else:
-            print("Creating new csv file for storing delay")
-            with open(delay_csv_file_path, "w", newline='') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=list(delay_stats[0].keys()))
-                writer.writeheader()
-                writer.writerows(delay_stats)
+        if delay_stats:
+            if delay_csv_file_path.exists():
+                with open(delay_csv_file_path, "a", newline='') as csvfile:
+                    print("Adding delays to existing file...")
+                    writer = csv.DictWriter(csvfile, fieldnames=list(delay_stats[0].keys()))
+                    writer.writerows(delay_stats)
+            else:
+                print("Creating new csv file for storing delay")
+                with open(delay_csv_file_path, "w", newline='') as csvfile:
+                    writer = csv.DictWriter(csvfile, fieldnames=list(delay_stats[0].keys()))
+                    writer.writeheader()
+                    writer.writerows(delay_stats)
                 
 
     def detect_zones(self, 
@@ -374,9 +384,8 @@ class ZoneDetector:
                 cv2.putText(frame, f"Min Zone: {min_zone}", (20, 80), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
-            # Resize current frame    
-            resized_frame = resize(frame, width=5120, height=2160)
-            cv2.imshow('Zone Counter', resized_frame)
+        
+            cv2.imshow('Zone Counter', frame)
             frame_time[frame_idx] = time.perf_counter()
             key = cv2.waitKey(delay) & 0xFF
             
