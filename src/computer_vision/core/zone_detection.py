@@ -403,6 +403,10 @@ class ZoneDetector:
         cap.release()
         cv2.destroyAllWindows()
 
+        execution_fps = (frame_idx+1) / (end_time - initial_time)
+        with open(self.log_folder / "fps.txt", "a") as fps_txt:
+            fps_txt.write(f"{self.video.stem} fps = {execution_fps}")
+
         # ------------------------------------- Closing Ground Truth Holes -------------------------------------
 
         closed_ground_truth = continuous_morphological_closing(3-ground_truth, 21)

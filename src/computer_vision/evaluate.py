@@ -1,6 +1,7 @@
 import argparse
 import yaml
 from pathlib import Path
+import time
 
 from core.config import DATA_DIR, EVALUATIONS_DIR, VIDEO_DIR, ALARM_CONFIG
 from core.zone_detection import ZoneDetector
@@ -72,6 +73,7 @@ def evaluate():
 
     zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path, delay_window=90, close_detection_gaps=30)
 
+    start_time = time.perf_counter()
     for file in mp4_files:
         print("="*30 + f" EVALUATING VIDEO {count_videos}: {file.stem.upper()} " + "="*30 + "\n")
         print(f"The annotation file used for {file} is {general_data['data'][str(file)]}")
@@ -86,7 +88,10 @@ def evaluate():
                                    point_u = (bbox_points[2], bbox_points[3]))
 
         count_videos += 1
+    final_time = time.perf_counter()
 
+    with open(csv_path.parent, 'w') as time_file:
+        time_file.write(f'Total Elapsed Time: {final_time - start_time}')
 
 if __name__ == '__main__':
     evaluate()
