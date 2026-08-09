@@ -1,0 +1,150 @@
+bbox_points:
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_00_1.mp4:
+  - 122
+  - 1076
+  - 364
+  - 413
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_00_2.mp4:
+  - 298
+  - 938
+  - 685
+  - 271
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_00_5.mp4:
+  - 196
+  - 1004
+  - 418
+  - 456
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_02_1.mp4:
+  - 37
+  - 992
+  - 315
+  - 311
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_02_2.mp4:
+  - 203
+  - 944
+  - 532
+  - 353
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_03_2.mp4:
+  - 118
+  - 905
+  - 340
+  - 228
+  /home/lucas/Documents/computer_vision/data/videos/GX010128_02_1.mp4:
+  - 292
+  - 997
+  - 486
+  - 314
+  /home/lucas/Documents/computer_vision/data/videos/GX020079_00_1.mp4:
+  - 115
+  - 1015
+  - 337
+  - 388
+  /home/lucas/Documents/computer_vision/data/videos/GX020079_00_4.mp4:
+  - 218
+  - 1007
+  - 387
+  - 585
+  /home/lucas/Documents/computer_vision/data/videos/GX020079_00_5.mp4:
+  - 331
+  - 909
+  - 529
+  - 350
+  /home/lucas/Documents/computer_vision/data/videos/GX020079_00_6.mp4:
+  - 157
+  - 1004
+  - 591
+  - 353
+  /home/lucas/Documents/computer_vision/data/videos/GX020079_02_2.mp4:
+  - 468
+  - 1059
+  - 636
+  - 458
+  /home/lucas/Documents/computer_vision/data/videos/GX020079_02_3.mp4:
+  - 327
+  - 1037
+  - 416
+  - 732
+  /home/lucas/Documents/computer_vision/data/videos/GX020128_00_1.mp4:
+  - 151
+  - 979
+  - 606
+  - 279
+  /home/lucas/Documents/computer_vision/data/videos/GX020128_00_2.mp4:
+  - 250
+  - 1009
+  - 523
+  - 322
+  /home/lucas/Documents/computer_vision/data/videos/GX020128_00_3.mp4:
+  - 168
+  - 1008
+  - 544
+  - 311
+  /home/lucas/Documents/computer_vision/data/videos/GX020128_00_4.mp4:
+  - 160
+  - 901
+  - 261
+  - 369
+  /home/lucas/Documents/computer_vision/data/videos/GX020128_00_5.mp4:
+  - 257
+  - 895
+  - 546
+  - 320
+  /home/lucas/Documents/computer_vision/data/videos/GX020128_02_2.mp4:
+  - 348
+  - 967
+  - 473
+  - 620
+  /home/lucas/Documents/computer_vision/data/videos/GX030079_00_2.mp4:
+  - 266
+  - 950
+  - 444
+  - 371
+  /home/lucas/Documents/computer_vision/data/videos/GX030079_03_1.mp4:
+  - 235
+  - 942
+  - 441
+  - 431
+  /home/lucas/Documents/computer_vision/data/videos/GX030079_03_2.mp4:
+  - 247
+  - 984
+  - 565
+  - 360
+  /home/lucas/Documents/computer_vision/data/videos/GX030079_03_4.mp4:
+  - 141
+  - 964
+  - 571
+  - 329
+data:
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_00_1.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_00_2.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_2.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_00_5.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_5.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_02_1.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_02_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_02_2.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_02_2.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX010080_03_2.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_03_2.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX010128_02_1.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010128_02_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX020079_00_1.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX020079_00_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX020079_00_4.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX020079_00_4.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX020079_00_5.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX020079_00_5.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX020079_00_6.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX020079_00_6.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX020079_02_2.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX020079_02_2.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX020079_02_3.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX020079_02_3.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX020128_00_1.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX020128_00_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX020128_00_2.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX020128_00_2.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX020128_00_3.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX020128_00_3.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX020128_00_4.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX020128_00_4.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX020128_00_5.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX020128_00_5.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX020128_02_2.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX020128_02_2.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX030079_00_2.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX030079_00_2.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX030079_03_1.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX030079_03_1.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX030079_03_2.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX030079_03_2.txt
+  /home/lucas/Documents/computer_vision/data/videos/GX030079_03_4.mp4: /home/lucas/Documents/computer_vision/data/annotations/yolo_GX030079_03_4.txt
+distortions:
+- gaussian_noise
+- gaussian_noise_conv
+- gaussian_blur
+- smoke
+- salt_and_pepper
+- rain
+- dirt
+- fog
+name: dataset_engins_de_chantier

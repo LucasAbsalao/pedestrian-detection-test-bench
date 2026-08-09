@@ -3,9 +3,9 @@ dirt:
   decay_factor: 1.0
   event_probability: 0.03
   kernel_factor: 160
-  kernel_size: 151
+  kernel_size: 249
   old_noise: null
-  sigma: 29
+  sigma: 41
 fog:
   airlight: 245
   minimum_distance: 18
@@ -26,9 +26,9 @@ gaussian_noise_conv:
   stdev: 180.0
 rain:
   additive: true
-  decay_factor: 0.98
+  decay_factor: 0.985
   event_probability: 0.3
-  kernel_factor: 150
+  kernel_factor: 160
   kernel_size: 321
   old_noise: null
   sigma: 59

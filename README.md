@@ -77,3 +77,6 @@ Test with different resolutions
 
 
 You should have ffmpeg installed
+
+Interesting cases:
+ GX010080_02_1 - Detected some other part

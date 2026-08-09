@@ -221,6 +221,8 @@ __marimo__/
 src/computer_vision/predict/
 /data/predict
 /videos/
+/datasets/small/predict/
+/datasets/**/*.mp4
 
 # Ignored Extensions
 *.pt

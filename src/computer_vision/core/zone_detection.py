@@ -31,6 +31,7 @@ class ZoneDetector:
                  csv : Path = Path("results.csv"),
                  alarm_config : Path = ALARM_CONFIG,
                  close_detection_gaps : int = 20,
+                 close_audio_gaps : int = 40,
                  delay_window : int = 60,
                  chunk : int = CHUNK,
                  format : int = FORMAT,
@@ -56,6 +57,8 @@ class ZoneDetector:
 
         # Corresponds to how many frames the system can ignore to consider a single detection extract
         self.close_detection_gaps = close_detection_gaps
+        self.close_audio_gaps = close_audio_gaps
+
         self.window = delay_window 
 
         self.save_audio = save_audio
@@ -443,16 +446,16 @@ class ZoneDetector:
 
         if isinstance(self.alarm_frequency, float) and isinstance(self.alarm_amplitude, float):
             binary_detection = self.ah.get_binary_detection(audio_data=audio_data,
-                                                        alarm_frequency=self.alarm_frequency,
-                                                        amp_threshold=self.alarm_amplitude,
-                                                        interval=0.05,
-                                                        seconds=audio_seconds,
-                                                        save_plot=self.log_folder)
+                                                            alarm_frequency=self.alarm_frequency,
+                                                            amp_threshold=self.alarm_amplitude,
+                                                            interval=0.05,
+                                                            seconds=audio_seconds,
+                                                            save_plot=self.log_folder)
         else:
             raise ValueError("Alarm Frequency and Alarm Amplitude should be floating points numbers")
 
         final_detection = self.ah.morph_closing(binary_detection=binary_detection,
-                                        struct_size=self.close_detection_gaps)
+                                        struct_size=self.close_audio_gaps)
 
         detected_audio_video = self.ah.resample_detection(frame_time, final_detection)
 
