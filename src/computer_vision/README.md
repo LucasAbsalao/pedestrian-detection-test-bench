@@ -34,7 +34,7 @@ src/computer_vision/
 ### 2. generate_data.py
 **Purpose**: Creates the evaluation dataset with ground truth annotations and distorted video versions.
 
-- Uses a **YOLOv8 model** (default: `yolo26x.pt`, changeable via `--model` parameter) to detect people traversing danger zones
+- Uses a **YOLO26 model** (default: `yolo26x.pt`, changeable via `--model` parameter) to detect people traversing danger zones
 - Danger zones are defined by trapezoid points (marked via `draw_trapeze_points.py` and stored in `data/points.yaml`)
 - Saves annotations in **YOLO format** to `/data/annotations/`
 - Applies **video degradations/distortions** (via `video_augmentation.py`) to each original video
@@ -50,8 +50,8 @@ src/computer_vision/
   - Play each video on screen (simulating the HIL setup)
   - Run the detection system on the video
   - Compare detection system output against ground truth annotations
-- Outputs evaluation metrics to a CSV file in `/evaluations/{evalutions/{eval_name}.csv`
-- Visualizes detections with `--draw True` flag
+- Outputs evaluation metrics to a CSV file in `/evaluations/{eval_name}/{eval_name}.csv`
+- Visualizes detections made by yolo with `--draw True` flag
 
 ## Data Flow
 
@@ -63,6 +63,8 @@ Original Videos (/data/videos/)
     │                           ├── Distorted Videos (/data/videos/distortions/)
     │                           │
     │                           └── dataset.yaml (maps videos ↔ annotations)
+    |                           │
+    │                           └── points.yaml (maps videos ↔ annotations)
     │
     └── evaluate.py ──► Evaluation Results (/evaluations/*.csv)
                           (using ground truth from dataset.yaml)

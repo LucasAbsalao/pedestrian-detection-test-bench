@@ -442,5 +442,163 @@ class TestStats(unittest.TestCase):
         self.assertEqual(len(second_delays), len(expected_delays))
         np.testing.assert_allclose(second_delays, expected_delays)
 
+    def test_calculate_latency_recall_no_detection_returns_none(self):
+        """No detection in the video -> no time_stamps -> None."""
+        n = 200
+        ground_truth = np.zeros(n, dtype=int)
+        predictions = np.zeros(n, dtype=int)
+
+        stats = Stats(general=True)
+        la_recall = stats.calculate_latency_recall(ground_truth=ground_truth,
+                                                   predictions=predictions,
+                                                   closing_structure_size=10)
+
+        self.assertIsNone(la_recall)
+
+    def test_calculate_latency_recall_no_detection_with_false_alarms_returns_none(self):
+        """No GT detection but spurious predictions still -> None (sum_gt == 0)."""
+        n = 200
+        ground_truth = np.zeros(n, dtype=int)
+        predictions = np.zeros(n, dtype=int)
+        predictions[50:60] = 1  # false alarms only
+
+        stats = Stats(general=True)
+        la_recall = stats.calculate_latency_recall(ground_truth=ground_truth,
+                                                   predictions=predictions,
+                                                   closing_structure_size=10)
+
+        self.assertIsNone(la_recall)
+
+    def test_calculate_latency_recall_perfect_detection_returns_one(self):
+        """Perfect predictions (== ground truth) -> latency recall of 1.0."""
+        n = 200
+        ground_truth = np.zeros(n, dtype=int)
+        ground_truth[30:60] = 1  # detection present
+
+        stats = Stats(general=True)
+        la_recall = stats.calculate_latency_recall(ground_truth=ground_truth,
+                                                   predictions=ground_truth,
+                                                   closing_structure_size=10)
+
+        self.assertIsNotNone(la_recall)
+        np.testing.assert_allclose(la_recall, 1.0)
+
+    def test_calculate_latency_recall_no_detection_non_general_returns_none(self):
+        """general=False always returns None regardless of detections."""
+        n = 200
+        ground_truth = np.zeros(n, dtype=int)
+        ground_truth[30:60] = 1
+
+        stats = Stats(general=False)
+        la_recall = stats.calculate_latency_recall(ground_truth=ground_truth,
+                                                   predictions=ground_truth,
+                                                   closing_structure_size=10)
+
+        self.assertIsNone(la_recall)
+
+    def test_calculate_is_detected_no_ground_truth(self):
+        """No ground truth detections -> (None, None)."""
+        n = 200
+        ground_truth = np.zeros(n, dtype=int)
+        predictions = np.zeros(n, dtype=int)
+
+        stats = Stats(general=True)
+        result = stats.calculate_is_detected(ground_truth=ground_truth,
+                                             predictions=predictions,
+                                             closing_structure_size=10)
+
+        self.assertEqual(result, (None, None))
+
+    def test_calculate_is_detected_all_segments_detected(self):
+        """Every GT segment has at least one prediction inside it."""
+        n = 200
+        ground_truth = np.zeros(n, dtype=int)
+        ground_truth[30:60] = 1
+        ground_truth[120:150] = 1
+        predictions = ground_truth.copy()
+
+        stats = Stats(general=True)
+        result = stats.calculate_is_detected(ground_truth=ground_truth,
+                                             predictions=predictions,
+                                             closing_structure_size=10)
+
+        self.assertEqual(result, (2, 2))
+
+    def test_calculate_is_detected_partial_detection(self):
+        """One GT segment detected, the other missed."""
+        n = 200
+        ground_truth = np.zeros(n, dtype=int)
+        ground_truth[30:60] = 1
+        ground_truth[120:150] = 1
+        predictions = np.zeros(n, dtype=int)
+        predictions[35:40] = 1  # only in the first segment
+
+        stats = Stats(general=True)
+        result = stats.calculate_is_detected(ground_truth=ground_truth,
+                                             predictions=predictions,
+                                             closing_structure_size=10)
+
+        self.assertEqual(result, (1, 2))
+
+    def test_calculate_is_detected_no_segments_detected(self):
+        """GT segments exist but no predictions overlap any of them."""
+        n = 200
+        ground_truth = np.zeros(n, dtype=int)
+        ground_truth[30:60] = 1
+        ground_truth[120:150] = 1
+        predictions = np.zeros(n, dtype=int)
+
+        stats = Stats(general=True)
+        result = stats.calculate_is_detected(ground_truth=ground_truth,
+                                             predictions=predictions,
+                                             closing_structure_size=10)
+
+        self.assertEqual(result, (0, 2))
+
+    def test_calculate_is_detected_false_alarms_do_not_count(self):
+        """Predictions outside GT segments are ignored."""
+        n = 200
+        ground_truth = np.zeros(n, dtype=int)
+        ground_truth[30:60] = 1
+        predictions = np.zeros(n, dtype=int)
+        predictions[80:90] = 1  # false alarm, outside the segment
+
+        stats = Stats(general=True)
+        result = stats.calculate_is_detected(ground_truth=ground_truth,
+                                             predictions=predictions,
+                                             closing_structure_size=10)
+
+        self.assertEqual(result, (0, 1))
+
+    def test_calculate_is_detected_single_frame_segment(self):
+        """Single-frame GT segment -> empty slice, never detected (current behavior)."""
+        n = 200
+        ground_truth = np.zeros(n, dtype=int)
+        ground_truth[5] = 1
+        predictions = np.zeros(n, dtype=int)
+        predictions[5] = 1  # prediction at the exact same frame
+
+        stats = Stats(general=True)
+        result = stats.calculate_is_detected(ground_truth=ground_truth,
+                                             predictions=predictions,
+                                             closing_structure_size=10)
+
+        # predictions[5:5] is empty -> not counted as detected
+        self.assertEqual(result, (1, 1))
+
+    def test_calculate_is_detected_non_general(self):
+        """general=False -> (None, None) even with detections present."""
+        n = 200
+        ground_truth = np.zeros(n, dtype=int)
+        ground_truth[30:60] = 1
+        predictions = ground_truth.copy()
+
+        stats = Stats(general=False)
+        result = stats.calculate_is_detected(ground_truth=ground_truth,
+                                             predictions=predictions,
+                                             closing_structure_size=10)
+
+        self.assertEqual(result, (None, None))
+
 if __name__ == '__main__':
     unittest.main()

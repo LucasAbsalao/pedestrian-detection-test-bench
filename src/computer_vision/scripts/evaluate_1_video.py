@@ -1,11 +1,11 @@
 '''
 To execute:
     python3 evaluate_1_video.py \
-    --video /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_2_salt_and_pepper.mp4 \
+    --video /home/lucas/Documents/computer_vision/data/videos/distortions/GX010080_00_2_gaussian_noise.mp4 \
     --predictions /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_2.txt \
-    --point-d 298 938     --point-u 685 275 \
-    --csv test_sp/results.csv \
-    --alarm blaxtair_real
+    --point-d 274 1039     --point-u 702 310 \
+    --csv test_gn/results.csv \
+    --alarm blaxtair
 '''
 import argparse
 from pathlib import Path
@@ -72,7 +72,7 @@ def evaluate():
     csv_path = args.csv
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
-    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path, save_audio=True)
+    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path, save_audio=True, close_audio_gaps=45)
 
     predictions = args.predictions
     predictions = predictions.resolve()

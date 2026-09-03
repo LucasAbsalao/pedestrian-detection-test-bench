@@ -77,6 +77,7 @@ class VideoAnnotator:
         count_frames = 0
 
         if self.txt_output_path.suffix:
+            self.txt_output_path.parent.mkdir(exist_ok=True, parents=True)
             annotation_file_path = self.txt_output_path
         else:
             self.txt_output_path.mkdir(exist_ok=True, parents=True)

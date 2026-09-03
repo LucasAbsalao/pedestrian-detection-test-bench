@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import pyaudio
 import threading
     
-from computer_vision.utils.draw import write_lines, draw_bboxes_from_data
+from computer_vision.utils.draw import write_lines, draw_bboxes_from_data, generate_trapezes
 from computer_vision.core.audio_handler import AudioHandler
 from computer_vision.utils.transformations import resize,  continuous_morphological_closing
 from computer_vision.utils.video import get_video_parameters
@@ -193,6 +193,7 @@ class ZoneDetector:
         plt.savefig(self.log_folder / "Latency_Recall.jpg")
         plt.close()
 
+        
         frame_delay = general_statistics.get_frame_delay(b_video_detection=binary_ground_truth,
                                                         b_audio_detection=detected,
                                                         window = self.window,
@@ -210,6 +211,12 @@ class ZoneDetector:
         print("Second Delay: ", second_delay)
         if len(frame_delay) != len(second_delay):
             raise RuntimeError("Quantity of frame delays and seconds delays are different, what shouldn't happen")
+
+        gt_intervals, detected_intervals = general_statistics.calculate_is_detected(ground_truth=binary_ground_truth,
+                                                                                      predictions=detected,
+                                                                                      closing_structure_size=self.close_detection_gaps)
+        if gt_intervals is not None and detected_intervals is not None:
+            print(f"How many continuous detection had at least 1 detection: {detected_intervals} over the total {gt_intervals}")
         
         video_duration = total_frames/self.fps
         general_statistics.calculate_rfa(video_duration)
@@ -255,7 +262,9 @@ class ZoneDetector:
             'R_false_alarm': general_statistics.r_fa,
             'NDCR': general_statistics.calculate_ndcr(),
             'Frame_Delay': general_statistics.frame_delay,
-            "Seconds_Delay": general_statistics.seconds_delay,
+            'Seconds_Delay': general_statistics.seconds_delay,
+            'Groud Truth Interval': general_statistics.gt_intervals,
+            'Predicted Interval': general_statistics.detected_interval,
             'Red Recall': statistics_per_zone['red'].calculate_recall(),
             'Orange Recall': statistics_per_zone['orange'].calculate_recall(),
             'Green Recall': statistics_per_zone['green'].calculate_recall()
@@ -335,6 +344,12 @@ class ZoneDetector:
         assert cap.isOpened(), "Error reading video file"
         
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+
+        if self.show:
+            trapezes = generate_trapezes(point_d=point_d,
+                                         point_u=point_u,
+                                         width = width)
 
         video_seconds = total_frames/self.fps
         
@@ -348,7 +363,7 @@ class ZoneDetector:
         frame_idx = 0
         
         print(f"Running video in real time (~{self.fps:.1f} FPS, delay={delay}ms)")
-        print("Hold or press 'd' when a person is inside the trapezoids, 'q' to quit")
+        print("'q' to quit")
         
         # ------------------------------------------ Main Loop ------------------------------------------
         cv2.namedWindow("Zone Counter", cv2.WND_PROP_FULLSCREEN)
@@ -378,7 +393,7 @@ class ZoneDetector:
             ground_truth[frame_idx] = min_zone
             
             if self.show:
-                frame = write_lines(frame, self.point_d)
+                frame = write_lines(frame, trapezes=trapezes)
                 frame = draw_bboxes_from_data(frame, frame_data)
             
                 # Display current metrics overlay
@@ -457,7 +472,9 @@ class ZoneDetector:
         final_detection = self.ah.morph_closing(binary_detection=binary_detection,
                                         struct_size=self.close_audio_gaps)
 
-        detected_audio_video = self.ah.resample_detection(frame_time, final_detection)
+        detected_audio_video = self.ah.resample_detection(video_time_array = frame_time, 
+                                                          binary_detection = final_detection, 
+                                                          audio_start_timestamp = self.ah.record_start_time)
 
         plt.figure()
         plt.subplot(1,2,1)

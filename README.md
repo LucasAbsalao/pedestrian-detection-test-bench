@@ -60,6 +60,7 @@ La fumée et le document pour le PRE
 * Test erosion in detection
 * Test frame delay using an audio from the same computer 
 * Do I use a frame window even in the seconds delay detection?
+* FIX opencv dependencies
 
 Which distortions should I use
 Put a light in front of the screen source éblouissante

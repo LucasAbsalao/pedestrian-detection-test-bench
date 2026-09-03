@@ -1,12 +1,30 @@
 blaxtair:
-  amplitude: 14.335637092590332
-  frequency: 5904.290909090909
+  amplitude: 13.050496101379395
+  frequency: 5900.0
 blaxtair_real:
   amplitude: 12.105152130126953
   frequency: 5900.0
 blaxtair_smartphone:
   amplitude: 8.47369384765625
   frequency: 5904.290909090909
+brigade:
+  amplitude: 14.197298049926758
+  frequency: 1800.0
+brigade_test:
+  amplitude: 21.77918243408203
+  frequency: 1800.0
+efa:
+  amplitude: 28.354616165161133
+  frequency: 1800.0
 random_test:
   amplitude: 5.143400192260742
   frequency: 100.07272727272726
+stonkam_camera:
+  amplitude: 24.951452255249023
+  frequency: 1800.0
+stonkam_screen:
+  amplitude: 9.880782127380371
+  frequency: 1800.0
+test:
+  amplitude: 14.828761100769043
+  frequency: 100.0

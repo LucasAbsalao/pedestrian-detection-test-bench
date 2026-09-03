@@ -265,7 +265,7 @@ class DistortionHandler:
         b_frames = []
         profile = ['-profile:v', 'main']
 
-        # Used for preserving high frequency details in video. In this case, for Salt and Pepper and Gaussian Noise distortions 
+        # Used for preserving high frequency details in video. In this project, for Salt and Pepper and Gaussian Noise distortions 
         if self.encoder_details:
             pix_fmt = 'yuv420p'
 

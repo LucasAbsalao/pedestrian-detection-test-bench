@@ -130,17 +130,19 @@ class Stats:
         n_miss = self.fn
         n_target = self.tp + self.fn
 
-        p_miss = n_miss/n_target if n_target>0 else 0
+        if n_target > 0:
+            return n_miss / n_target
+        else:
+            return 0
 
-        return p_miss
-
-    def calculate_pfa(self) -> float:
+    def calculate_pfa(self) -> Optional[float]:
         n_fa = self.fp
         n_source = self.fp + self.tn
 
-        p_fa = n_fa/n_source if n_source>0 else 0
-    
-        return p_fa
+        if n_source > 0:
+            return n_fa / n_source
+        else:
+            return None
     
     def calculate_rfa(self, time:float) -> float:
         n_fa = self.fp
@@ -150,10 +152,15 @@ class Stats:
 
         return self.r_fa
     
-    def calculate_ndcr(self) -> float:
+    def calculate_ndcr(self) -> Optional[float]:
         fa_term = self.calculate_pfa() if self.r_fa == 0 else self.r_fa
 
-        return self.calculate_pmiss() + 0.005 * fa_term
+        p_miss = self.calculate_pmiss()
+        if p_miss is None or fa_term is None:
+            return None
+        else:
+            return p_miss + 0.005 * fa_term
+    
 
     def get_detection_duration_in_frames(self, ground_truth : NDArray, closing_se_size:int):
         timestamps = []
@@ -396,7 +403,31 @@ class Stats:
                 return avg_la_recall
             else:
                 return 0.0
-            
+
+    def calculate_is_detected(self, ground_truth : NDArray, predictions : NDArray, closing_structure_size : int = 10) -> tuple[int, int] | tuple[None, None]:
+        '''Check if a person was detected at least onde for every continuous detection interval'''
+        self.gt_intervals = None
+        self.detected_interval = None
+        if self.general_purpose:
+            time_stamps = self.get_detection_duration_in_frames(ground_truth=ground_truth,
+                                                                closing_se_size=closing_structure_size)
+            if len(time_stamps) == 0:
+
+                return None, None
+            total_existence = len(time_stamps)
+            detections = 0
+            for t_start, t_end in time_stamps:
+                detected = np.flatnonzero(predictions[t_start:t_end+1])
+                if detected.size > 0:
+                    detections+=1
+
+            self.gt_intervals = total_existence
+            self.detected_interval = detections
+
+            return detections, total_existence
+        else:
+            return None, None
+        
     def __str__(self) -> str:
         absolute_variables = f"Hits (True Positive):        {self.tp}\n" + \
                              f"Misses (False Negatives):       {self.fn}\n" + \
@@ -430,6 +461,7 @@ class Stats:
 
         
         metrics += f"Miss Probability:                       {pmiss*100:.2f}% (Missed Detection probability)\n"
+
     
         if self.general_purpose:
             absolute_variables += f"Weighted True Positives: {self.weighted_tp}\n" + \
@@ -438,8 +470,14 @@ class Stats:
                                   f"Frame Delays in frames: {self.frame_delay}\n"
 
             w_rec = self.calculate_weighted_recall()
-            metrics += f"False Alarm Probability:                {self.calculate_pfa()*100:.2f}% (False Alarm probability)\n" + \
-                       f"False Alarm Rate:                       {self.r_fa*100:.2f} (False Alarm Rate in occurence per hour)\n" + \
+            p_fa = self.calculate_pfa()
+
+            if p_fa is not None:    
+                metrics += f"False Alarm Probability:                {p_fa*100:.2f}% (False Alarm probability)\n"
+            else:
+                metrics += f"False Alarm Probability:                N/A (No actual pedestrians in video)\n"
+
+            metrics += f"False Alarm Rate:                       {self.r_fa*100:.2f} (False Alarm Rate in occurence per hour)\n" + \
                        f"NDCR:                                   {self.calculate_ndcr():.2f} (Normalized Detection Cost Rate, a weighted combination)\n"
 
             if w_rec is not None:

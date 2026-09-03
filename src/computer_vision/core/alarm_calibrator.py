@@ -130,7 +130,7 @@ class AlarmCalibrator:
             exit(1)
 
         closed_b_detection = self.ah.morph_closing(binary_detection=binary_detection,
-                                            struct_size=20)
+                                            struct_size=60)
 
         plt.subplot(3,1,1)
         frequence_with_max_amp = np.argmax(dbs, axis=0)

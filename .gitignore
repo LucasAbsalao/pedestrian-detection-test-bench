@@ -218,15 +218,25 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Local Repos
-src/computer_vision/predict/
 /data/predict
+/data/annotations/
+/data/videos/**/*.mp4
 /videos/
 /datasets/small/predict/
 /datasets/**/*.mp4
 
+/src/computer_vision/predict/
+/src/computer_vision/experimentation/*.mp4
+/src/computer_vision/experimentation/*.avi
+
+/calibrate/**/
+
+# Data from tests
+/evaluations/
+/data/annotations/
+/src/computer_vision/utils/graphs
+/src/computer_vision/log/
+
 # Ignored Extensions
 *.pt
 *.pth
-/src/computer_vision/experimentation/*.mp4
-/src/computer_vision/experimentation/*.avi
-/data/videos/**/*.mp4

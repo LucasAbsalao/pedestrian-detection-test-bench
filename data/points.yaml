@@ -4,50 +4,50 @@
 - 364
 - 413
 /home/lucas/Documents/computer_vision/data/videos/GX010080_00_2.mp4:
-- 298
-- 938
-- 685
-- 271
+- 274
+- 1039
+- 702
+- 310
 /home/lucas/Documents/computer_vision/data/videos/GX010080_00_5.mp4:
 - 196
 - 1004
 - 418
 - 456
 /home/lucas/Documents/computer_vision/data/videos/GX010080_02_1.mp4:
-- 37
-- 992
-- 315
-- 311
+- 225
+- 1064
+- 642
+- 267
 /home/lucas/Documents/computer_vision/data/videos/GX010080_02_2.mp4:
 - 203
 - 944
 - 532
 - 353
 /home/lucas/Documents/computer_vision/data/videos/GX010080_03_2.mp4:
-- 118
-- 905
-- 340
-- 228
+- 164
+- 1077
+- 599
+- 269
 /home/lucas/Documents/computer_vision/data/videos/GX010083_00_1.mp4:
-- 310
-- 1046
-- 600
-- 564
+- 229
+- 1078
+- 584
+- 394
 /home/lucas/Documents/computer_vision/data/videos/GX010083_00_3.mp4:
-- 309
-- 1074
-- 683
-- 519
+- 312
+- 1078
+- 621
+- 388
 /home/lucas/Documents/computer_vision/data/videos/GX010083_03_1.mp4:
 - 399
 - 1050
 - 682
 - 484
 /home/lucas/Documents/computer_vision/data/videos/GX010083_04_3.mp4:
-- 451
-- 1017
-- 615
-- 428
+- 378
+- 1035
+- 621
+- 290
 /home/lucas/Documents/computer_vision/data/videos/GX010085_00_1.mp4:
 - 265
 - 1059
@@ -79,20 +79,20 @@
 - 633
 - 508
 /home/lucas/Documents/computer_vision/data/videos/GX010086_00_2.mp4:
-- 265
-- 1038
-- 523
-- 437
+- 276
+- 1078
+- 684
+- 290
 /home/lucas/Documents/computer_vision/data/videos/GX010128_02_1.mp4:
-- 292
-- 997
-- 486
-- 314
+- 443
+- 1053
+- 719
+- 382
 /home/lucas/Documents/computer_vision/data/videos/GX010134_00_1.mp4:
-- 383
-- 1021
-- 604
-- 423
+- 243
+- 1078
+- 462
+- 421
 /home/lucas/Documents/computer_vision/data/videos/GX010135_00_1.mp4:
 - 168
 - 1077
@@ -104,10 +104,10 @@
 - 541
 - 596
 /home/lucas/Documents/computer_vision/data/videos/GX010135_00_4.mp4:
-- 388
-- 1075
-- 557
-- 504
+- 223
+- 1077
+- 433
+- 443
 /home/lucas/Documents/computer_vision/data/videos/GX010135_04_1.mp4:
 - 546
 - 973
@@ -119,10 +119,10 @@
 - 337
 - 388
 /home/lucas/Documents/computer_vision/data/videos/GX020079_00_4.mp4:
-- 218
-- 1007
-- 387
-- 585
+- 268
+- 1015
+- 359
+- 429
 /home/lucas/Documents/computer_vision/data/videos/GX020079_00_5.mp4:
 - 331
 - 909
@@ -134,10 +134,10 @@
 - 591
 - 353
 /home/lucas/Documents/computer_vision/data/videos/GX020079_02_2.mp4:
-- 468
-- 1059
-- 636
-- 458
+- 255
+- 1031
+- 655
+- 407
 /home/lucas/Documents/computer_vision/data/videos/GX020079_02_3.mp4:
 - 327
 - 1037
@@ -174,10 +174,10 @@
 - 261
 - 369
 /home/lucas/Documents/computer_vision/data/videos/GX020128_00_5.mp4:
-- 257
-- 895
-- 546
-- 320
+- 460
+- 827
+- 305
+- 329
 /home/lucas/Documents/computer_vision/data/videos/GX020128_02_2.mp4:
 - 348
 - 967
@@ -198,11 +198,6 @@
 - 1048
 - 608
 - 571
-/home/lucas/Documents/computer_vision/data/videos/GX030079_00_2.mp4:
-- 266
-- 950
-- 444
-- 371
 /home/lucas/Documents/computer_vision/data/videos/GX030079_03_1.mp4:
 - 235
 - 942
@@ -244,10 +239,10 @@
 - 838
 - 443
 /home/lucas/Documents/computer_vision/data/videos/Normal_20260805112031_01_00_2.mp4:
-- 350
-- 1010
-- 488
-- 593
+- 321
+- 965
+- 573
+- 522
 /home/lucas/Documents/computer_vision/data/videos/Normal_20260805143329_01_00_1.mp4:
 - 476
 - 1037

@@ -1,3 +1,8 @@
+'''
+python3 evaluate.py --name brigade_petit_test --alarm brigade_test 2>&1 | tee log_brigade_test.txt
+
+python3 evaluate.py --name blaxtair_new_test --alarm blaxtair 2>&1 | tee log/log_blaxtair_new.txt
+'''
 import argparse
 import yaml
 from pathlib import Path
@@ -36,6 +41,12 @@ def parse_args() -> argparse.Namespace:
         default=True,
         help="If set to true, every single distorted video will also be put to test."
     )
+    parser.add_argument(
+        "--resume",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="If passed, skips videos that already exist in the output CSV."
+    )
     return parser.parse_args()
 
 
@@ -61,17 +72,40 @@ def evaluate():
     else:
         mp4_files = list(video_dir.glob("*.mp4"))
 
-    print("List of videos to be evaluated:")
-    for file in mp4_files:
-        print(str(file)) 
-
     # CSV file
     csv_path = EVALUATIONS_DIR / args.name / f'{args.name}.csv'
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
+    evaluated_videos = set()
+    
+    if args.resume and csv_path.exists() and csv_path.stat().st_size > 0:
+        import pandas as pd
+        df = pd.read_csv(csv_path)
+        
+        video_column_header = 'Name' 
+        
+        if video_column_header in df.columns:
+            evaluated_videos = set(df[video_column_header].astype(str))
+        else:
+            print(f"Warning: '{video_column_header}' not found in {csv_path.name}.")
+            print("Cannot filter resumed videos properly. Starting from scratch or check column name.")
+
+    videos_to_evaluate = []
+    for file in mp4_files:
+        if args.resume and file.name in evaluated_videos:
+            pass
+        else:
+            videos_to_evaluate.append(file)
+            
+    mp4_files = videos_to_evaluate
+
+    print(f"List of {len(mp4_files)} videos to be evaluated:")
+    for file in mp4_files:
+        print(str(file)) 
+
     count_videos = 1
 
-    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path, delay_window=90, close_detection_gaps=30)
+    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path, delay_window=100, close_detection_gaps=30, close_audio_gaps=45)
 
     start_time = time.perf_counter()
     for file in mp4_files:
@@ -90,7 +124,7 @@ def evaluate():
         count_videos += 1
     final_time = time.perf_counter()
 
-    with open(csv_path.parent, 'w') as time_file:
+    with open(csv_path.parent / "time.txt", 'w') as time_file:
         time_file.write(f'Total Elapsed Time: {final_time - start_time}')
 
 if __name__ == '__main__':

@@ -9,9 +9,11 @@ PREDICT_DIR = DATA_DIR / "predict"
 DISTORTION_DIR = VIDEO_DIR / "distortions"
 MODELS_DIR = SRC_DIR / "models"
 CONFIG_DIR = SRC_DIR / "config"
+UTILS_DIR = SRC_DIR / "utils"
 EVALUATIONS_DIR = ROOT_DIR / "evaluations"
 CALIBRATE_DIR = ROOT_DIR / "calibrate"
 DEPTH_ANYTHING_DIR = ROOT_DIR / "Depth-Anything-V2"
+FRAMES_DIR = ROOT_DIR / "frames"
 
 # Default model paths
 DEFAULT_YOLO_MODEL = MODELS_DIR / "yolo26x.pt"

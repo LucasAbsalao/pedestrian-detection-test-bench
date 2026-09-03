@@ -5,6 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 import time
 from pathlib import Path
+import math
 from scipy import signal
 from scipy import stats
 from scipy.ndimage import binary_closing
@@ -50,11 +51,11 @@ class AudioHandler:
     def record_audio_async(self, start_event, stop_event):
         start_event.wait()
 
-        start_time = time.perf_counter()
 
         print("[AUDIO] * recording")
         self.frames = []
 
+        start_time = time.perf_counter()
         while not stop_event.is_set():
             data = self.stream.read(self.chunk)
             self.frames.append(data)
@@ -226,11 +227,11 @@ class AudioHandler:
         return np.arange(len(video_time_array))[valid_frames]
 
     def first_audio_data_after_time(self, audio_data:NDArray, time:float, period_in_seconds:float):
-        idx_detection = int(time / period_in_seconds) + 1
-        return audio_data[idx_detection]
+        idx = math.ceil(round(time / period_in_seconds, 7))
+        return audio_data[idx]
 
 
-    def resample_detection(self, video_time_array, binary_detection):
+    def resample_detection(self, video_time_array : NDArray, binary_detection : NDArray , audio_start_timestamp : float):
         video_audio_b_detection = np.zeros(video_time_array.shape, dtype=int)
         
         valid_frames = self.valid_video_frames(video_time_array=video_time_array)
@@ -238,8 +239,8 @@ class AudioHandler:
         period = self.record_duration / len(binary_detection)
 
         for frame in valid_frames:
-            frame_time = video_time_array[frame] - video_time_array[0]
-            video_audio_b_detection[frame] = self.first_audio_data_after_time(audio_data=binary_detection, time=frame_time, period_in_seconds=period)
+            frame_time = float(video_time_array[frame])
+            video_audio_b_detection[frame] = self.first_audio_data_after_time(audio_data=binary_detection, time=frame_time - audio_start_timestamp, period_in_seconds=period)
 
         return video_audio_b_detection
 

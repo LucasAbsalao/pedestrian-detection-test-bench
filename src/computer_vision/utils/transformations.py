@@ -74,7 +74,10 @@ def salt_and_pepper(image : NDArray, salt_prob : float, pepper_prob : float):
     return image_s_p
 
 def gaussian_noise_conv(image : NDArray,  mean: float, stdev: float, kernel_size : int):
-    noise = np.random.normal(loc=mean, scale=stdev, size=image.shape)
+    noise = rng.standard_normal(size=image.shape, dtype=np.float32)
+        
+    noise *= stdev
+    noise += mean
 
     box_kernel = np.ones((kernel_size, kernel_size), dtype = np.float32) / kernel_size**2
     noise_conv = cv2.filter2D(src=noise, ddepth=-1, kernel=box_kernel)
