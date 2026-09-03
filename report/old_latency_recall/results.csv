@@ -1,2 +1,0 @@
-Name,Accuracy,Precision,Recall,F1 Score,Latency Recall,Weighted Recall,P_miss,P_false_alarm,R_false_alarm,NDCR,Red Recall,Orange Recall,Green Recall
-GX010079_01_4_gaussian_noise.mp4,0.8047619047619048,0.7320261437908496,1.0,3.0,0.6,1.0,0.0,0.41836734693877553,20382.857142857145,101.91428571428573,1.0,1.0,0.0
