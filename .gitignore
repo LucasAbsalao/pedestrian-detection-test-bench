@@ -231,11 +231,14 @@ __marimo__/
 
 /calibrate/**/
 
+.opencode/
+
 # Data from tests
 /evaluations/
 /data/annotations/
 /src/computer_vision/utils/graphs
 /src/computer_vision/log/
+/report/
 
 # Ignored Extensions
 *.pt
