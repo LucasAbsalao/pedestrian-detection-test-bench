@@ -85,7 +85,7 @@ poetry run python3 calibrate_alarm.py --name my_alarm --convolutional_detection
 poetry run python3 generate_data.py --name my_dataset --model models/yolo26x.pt
 
 # 3. Evaluate the detection system (HIL)
-poetry run python3 evaluate.py --name my_eval --dataset my_dataset --alarm my_alarm
+poetry run python3 evaluate.py --name my_eval --dataset my_dataset --alarm my_alarm --convolutional_detection
 ```
 
 > **Note:** the scripts are run from inside `src/computer_vision/` (they import the sibling

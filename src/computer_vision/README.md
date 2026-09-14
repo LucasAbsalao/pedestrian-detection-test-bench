@@ -75,9 +75,9 @@ a video into frames with `ffmpeg`.
 ```bash
 cd src/computer_vision
 
-poetry run python3 calibrate_alarm.py --name my_alarm
+poetry run python3 calibrate_alarm.py --name my_alarm --convolutional_detection
 poetry run python3 generate_data.py --name my_dataset --model models/yolo26x.pt
-poetry run python3 evaluate.py --name my_eval --dataset my_dataset --alarm my_alarm
+poetry run python3 evaluate.py --name my_eval --dataset my_dataset --alarm my_alarm --convolutional_detection
 ```
 
 The recommended command for the evaluation uses `tee` so the output is both shown in the
