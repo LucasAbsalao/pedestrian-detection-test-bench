@@ -1,0 +1,3 @@
+teste_conv:
+  convolutional_kernel_file: /home/lucas/Documents/computer_vision/src/computer_vision/config/convolutional_kernels/teste_conv.npy
+  threshold: 0.8558052182197571

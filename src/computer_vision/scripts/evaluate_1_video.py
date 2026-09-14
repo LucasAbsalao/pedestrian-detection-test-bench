@@ -5,7 +5,7 @@ To execute:
     --predictions /home/lucas/Documents/computer_vision/data/annotations/yolo_GX010080_00_2.txt \
     --point-d 274 1039     --point-u 702 310 \
     --csv test_gn/results.csv \
-    --alarm blaxtair
+    --alarm teste_conv
 '''
 import argparse
 from pathlib import Path
@@ -72,7 +72,7 @@ def evaluate():
     csv_path = args.csv
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
-    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path, save_audio=True, close_audio_gaps=45)
+    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path, save_audio=True, close_audio_gaps=45, use_conv=True)
 
     predictions = args.predictions
     predictions = predictions.resolve()

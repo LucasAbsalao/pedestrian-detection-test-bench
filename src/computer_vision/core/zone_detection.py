@@ -37,7 +37,8 @@ class ZoneDetector:
                  format : int = FORMAT,
                  channels : int = CHANNELS,
                  rate : int = RATE,
-                 save_audio : bool = False
+                 save_audio : bool = False,
+                 use_conv : bool = False
                  ):
         
         self.show = show
@@ -47,13 +48,25 @@ class ZoneDetector:
         self.alarm_name = alarm
         self.alarm_path = alarm_config.resolve()
 
-        print(self.alarm_path)
-        self.alarm_frequency, self.alarm_amplitude = self._get_alarm_frequency(self.alarm_name, self.alarm_path)
+        self.use_conv = use_conv
+        if self.alarm_path == ALARM_CONFIG and self.use_conv:
+            self.alarm_path = self.alarm_path.with_stem(self.alarm_path.stem + '_conv')
 
-        if self.alarm_frequency is None:
-            raise RuntimeError("Could not get alarm frequency from yaml file.")
-        if self.alarm_amplitude is None:
-            raise RuntimeError("Could not get alarm amplitude threshold from yaml file.")
+        print(self.alarm_path)
+
+        if self.use_conv:
+            self.convolutional_kernel, self.threshold = self._get_alarm_frequency(self.alarm_name, self.alarm_path)
+            if self.convolutional_kernel is None:
+                raise RuntimeError("Could not get convolutional kernel from yaml file.")
+            if self.threshold is None:
+                raise RuntimeError("Could not get detection thresholçd from yaml file.")
+        else:
+            self.alarm_frequency, self.alarm_amplitude = self._get_alarm_frequency(self.alarm_name, self.alarm_path)
+
+            if self.alarm_frequency is None:
+                raise RuntimeError("Could not get alarm frequency from yaml file.")
+            if self.alarm_amplitude is None:
+                raise RuntimeError("Could not get alarm amplitude threshold from yaml file.")
 
         # Corresponds to how many frames the system can ignore to consider a single detection extract
         self.close_detection_gaps = close_detection_gaps
@@ -100,7 +113,11 @@ class ZoneDetector:
                 if alarm_name in data_alarm:
                     print("Alarm found: ")
                     print(data_alarm[alarm_name])
-                    return data_alarm[alarm_name]['frequency'], data_alarm[alarm_name]['amplitude']
+                    if self.use_conv:
+                        convolutional_kernel = np.load(data_alarm[alarm_name]["convolutional_kernel_file"])
+                        return convolutional_kernel, data_alarm[alarm_name]['threshold']
+                    else:
+                        return data_alarm[alarm_name]['frequency'], data_alarm[alarm_name]['amplitude']
 
         return None, None
 
@@ -459,15 +476,23 @@ class ZoneDetector:
                             show=False,
                             filepath=str(self.log_folder / "Spectrogram_Detection.jpg"))
 
-        if isinstance(self.alarm_frequency, float) and isinstance(self.alarm_amplitude, float):
-            binary_detection = self.ah.get_binary_detection(audio_data=audio_data,
-                                                            alarm_frequency=self.alarm_frequency,
-                                                            amp_threshold=self.alarm_amplitude,
-                                                            interval=0.05,
-                                                            seconds=audio_seconds,
-                                                            save_plot=self.log_folder)
+        if self.use_conv:
+            if isinstance(self.convolutional_kernel, np.ndarray) and isinstance(self.threshold, float):
+                binary_detection = self.ah.get_binary_detection_correlation(audio_data=audio_data,
+                                                                            conv_threshold=self.threshold,
+                                                                            convolutional_kernel=self.convolutional_kernel,
+                                                                            save_plot=self.log_folder)
+            else:
+                raise ValueError("Convolutional Kernel should be a numpy array and Threshold should be a floating point numbers")
         else:
-            raise ValueError("Alarm Frequency and Alarm Amplitude should be floating points numbers")
+            if isinstance(self.alarm_frequency, float) and isinstance(self.alarm_amplitude, float):
+                binary_detection = self.ah.get_binary_detection(audio_data=audio_data,
+                                                                alarm_frequency=self.alarm_frequency,
+                                                                amp_threshold=self.alarm_amplitude,
+                                                                interval=0.05,
+                                                                save_plot=self.log_folder)
+            else:
+                raise ValueError("Alarm Frequency and Alarm Amplitude should be floating points numbers")
 
         final_detection = self.ah.morph_closing(binary_detection=binary_detection,
                                         struct_size=self.close_audio_gaps)

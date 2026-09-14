@@ -176,8 +176,105 @@ class AudioHandler:
         plt.close()
 
         return frequency[f_idx], amplitude
+
+    def convolution_1d(self, data, kernel):
+        kernel_size = kernel.shape[1]
+        padded_data = np.pad(data, pad_width=((0,0),(int(kernel_size/2), int(kernel_size/2))), mode='edge')
+        convolved_1d = np.zeros(data.shape[1], dtype=padded_data.dtype)
+
+        for i in range(data.shape[1]):
+            convolved_1d[i] = np.sum(padded_data[:,i:i+kernel_size] * kernel)
+
+        return convolved_1d
+
+    def normalized_cross_correlation(self, data, kernel):
+        kernel_size = kernel.shape[1]
+        padded_data = np.pad(data, pad_width=((0,0),(int(kernel_size/2), int(kernel_size/2))), mode='edge')
+        correlated_1d = np.zeros(data.shape[1], dtype=padded_data.dtype)
+
+        centered_kernel = kernel - np.mean(kernel)
+
+        for i in range(data.shape[1]):
+            centered_patch = padded_data[:,i:i+kernel_size] - np.mean(padded_data[:,i:i+kernel_size])
+            norm_product = np.linalg.norm(centered_patch) * np.linalg.norm(centered_kernel)
+
+            if norm_product != 0:
+                correlated_1d[i] = np.sum(centered_patch * centered_kernel) / norm_product
+            else:
+                correlated_1d[i] = 0.0
+
+        return correlated_1d
+
+    def detection_frequency_correlation(self, spectrogram, frequency, frames_offset:int=20, save_plot : Path = Path("amplitude_threshold.jpg")):
+        frequence_with_max_amp = np.argmax(spectrogram, axis=0)
+        
+        f_idx = stats.mode(frequence_with_max_amp)[0]
+
+        alarm_detection = frequence_with_max_amp == f_idx
+        alarm_detection = alarm_detection[frames_offset:] # Small delay to initialize audio sensor
+        spectrogram_with_delay = spectrogram[:,frames_offset:]
+
+        alarm_frequency_amplitudes = spectrogram_with_delay[f_idx,:]
+
+        amplitude_for_conv_kernel = np.quantile(alarm_frequency_amplitudes[alarm_detection], q=0.90, method='nearest')
+        print("Amplitude for convolutional kernel: ", amplitude_for_conv_kernel)
+
+        # Defining pattern matching kernel
+        kernel_size = int(self.time_samples_per_seg/10)
+        start_time_idx = np.where(alarm_frequency_amplitudes == amplitude_for_conv_kernel)[0][0]
+        end_time_idx = start_time_idx + kernel_size
+
+        pattern_matching_kernel = spectrogram_with_delay[:, start_time_idx:end_time_idx]
+
+        self.plot_spectrogram(frequency=frequency, 
+                                      time_stamps=np.arange(0, pattern_matching_kernel.shape[1]), 
+                                      spectrogram=pattern_matching_kernel, 
+                                      filepath = str(save_plot.parent / "pattern_convolution.jpg"))
+        print("Max: ", np.max(pattern_matching_kernel), " Min: ", np.min(pattern_matching_kernel))
+
+        # Cross correlation
+        correlated_spec_1d = self.normalized_cross_correlation(spectrogram_with_delay, pattern_matching_kernel)
+
+        # Relationship between convolution result and the time stamps where the frequency with maximal amplitude was the alarm frequency
+        correlation_score_threshold = np.quantile(correlated_spec_1d[alarm_detection], q=0.08, method='nearest')
+        print("Correlation Score Threshold: ", correlation_score_threshold)
+
+        # Plot 
+        time_axis = np.arange(frames_offset, spectrogram_with_delay.shape[1] + frames_offset)
+
+        plt.figure()
+        plt.scatter(time_axis[alarm_detection], 
+                    alarm_frequency_amplitudes[alarm_detection], 
+                    color='red', label='Alarm', s=15)
     
-    def get_binary_detection(self, audio_data, alarm_frequency:float, amp_threshold:float, interval:float, seconds:float, save_plot : Path | None = None):
+        plt.scatter(time_axis[~alarm_detection], 
+                    alarm_frequency_amplitudes[~alarm_detection], 
+                    color='blue', label='Noise', s=15)
+
+        plt.hlines(amplitude_for_conv_kernel, 0, len(time_axis), linestyle='dashed', color='black', label=f'Min Amp Threshold')
+        plt.title("Detecting amplitude threshold")
+        plt.savefig(str(save_plot))
+        plt.show()
+        plt.close()
+
+        plt.figure()
+        plt.scatter(time_axis[alarm_detection], 
+                    correlated_spec_1d[alarm_detection], 
+                    color='red', label='Alarm', s=15)
+            
+        plt.scatter(time_axis[~alarm_detection], 
+                    correlated_spec_1d[~alarm_detection], 
+                    color='blue', label='Noise', s=15)
+        plt.hlines(correlation_score_threshold, 0, len(time_axis), linestyle='dashed', color='black', label=f'Min Threshold')
+        plt.title("Detecting convolution threshold")
+        plt.savefig(str(save_plot.parent / "convolution_threshold.jpg"))
+        plt.show()
+        plt.close()
+
+        return frequency[f_idx], float(correlation_score_threshold), pattern_matching_kernel
+
+    
+    def get_binary_detection(self, audio_data, alarm_frequency:float, amp_threshold:float, interval:float, save_plot : Path | None = None):
 
         f, t, Sxx = self.spectrogram(audio_data=audio_data)
 
@@ -213,6 +310,24 @@ class AudioHandler:
 
         return binary_detection.astype(int)
 
+    def get_binary_detection_correlation(self, audio_data, conv_threshold:float, convolutional_kernel:NDArray, save_plot : Path | None = None):
+
+        f, t, Sxx = self.spectrogram(audio_data=audio_data)
+
+        correlated_spec_1d = self.normalized_cross_correlation(Sxx, convolutional_kernel)
+
+        plt.figure()
+        plt.plot(correlated_spec_1d, color = 'purple')
+        plt.hlines(conv_threshold, 0, correlated_spec_1d.shape[0], linestyle='dashed', color='black', label=f'Min Threshold')
+        if save_plot is not None:
+            plt.savefig(str(save_plot / "Audio_Detection_Convoluted.jpg"))
+        plt.close()
+
+
+        binary_detection = correlated_spec_1d > conv_threshold
+
+        return binary_detection.astype(int)
+
     def morph_closing(self, binary_detection, struct_size:int):
         structuring_element = np.ones(struct_size, dtype=int) # t = 10 * struct_size ms
         closing_detection = binary_closing(binary_detection, structure=structuring_element, border_value=1).astype(int)
@@ -243,5 +358,3 @@ class AudioHandler:
             video_audio_b_detection[frame] = self.first_audio_data_after_time(audio_data=binary_detection, time=frame_time - audio_start_timestamp, period_in_seconds=period)
 
         return video_audio_b_detection
-
-            

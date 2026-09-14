@@ -28,3 +28,6 @@ stonkam_screen:
 test:
   amplitude: 14.828761100769043
   frequency: 100.0
+teste_conv:
+  amplitude: 25.33121109008789
+  frequency: 5900.0

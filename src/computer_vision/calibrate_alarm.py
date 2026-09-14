@@ -21,6 +21,12 @@ def parse_args(arg_list = None) -> argparse.Namespace:
         default=ALARM_CONFIG,
         help="Path to config file where the alarm frequency will be saved."
     )
+    parser.add_argument(
+        "--convolutional_detection",
+        action = argparse.BooleanOptionalAction,
+        default = False,
+        help="If true, a pattern matching convolutional kernel will be used for alarm detection. If false, the detection will be made based on the alarm frequency with maximal amplitude."
+    )
 
     return parser.parse_args(arg_list)
 
@@ -29,7 +35,8 @@ def calibrate_alarm():
     args = parse_args()
     alarm_calibrator = AlarmCalibrator(name=args.name,
                                        record_seconds = 10,
-                                       output_path = args.config)
+                                       output_path = args.config,
+                                       conv=args.convolutional_detection)
 
     alarm_calibrator.calibrate()
 

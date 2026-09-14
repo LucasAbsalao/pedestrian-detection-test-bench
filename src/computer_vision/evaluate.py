@@ -47,6 +47,12 @@ def parse_args() -> argparse.Namespace:
         default=True,
         help="If passed, skips videos that already exist in the output CSV."
     )
+    parser.add_argument(
+        "--convolutional_detection",
+        action = argparse.BooleanOptionalAction,
+        default = False,
+        help="If true, a pattern matching convolutional kernel will be used for alarm detection. If false, the detection will be made based on the alarm frequency with maximal amplitude."
+    )
     return parser.parse_args()
 
 
@@ -105,7 +111,13 @@ def evaluate():
 
     count_videos = 1
 
-    zone_detector = ZoneDetector(alarm=args.alarm, show = False, csv = csv_path, delay_window=100, close_detection_gaps=30, close_audio_gaps=45)
+    zone_detector = ZoneDetector(alarm=args.alarm, 
+                                 show = False, 
+                                 csv = csv_path, 
+                                 delay_window=100, 
+                                 close_detection_gaps=30, 
+                                 close_audio_gaps=45,
+                                 use_conv=args.convolutional_detection)
 
     start_time = time.perf_counter()
     for file in mp4_files:

@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
+from numpy.typing import NDArray
 from .audio_handler import AudioHandler
 import yaml
 
@@ -20,11 +21,12 @@ class AlarmCalibrator:
                  chunk : int = CHUNK,
                  format : int = FORMAT,
                  channels : int = CHANNELS,
-                 rate : int = RATE
+                 rate : int = RATE,
+                 conv : bool = False
                  ) -> None:
         
         self.alarm_name = name
-        self.config_path = output_path
+        self.config_path = output_path if not conv else output_path.with_stem(output_path.stem + '_conv')
 
         self.ah = AudioHandler(chunk = chunk,
                                format = format,
@@ -35,6 +37,8 @@ class AlarmCalibrator:
 
         self.save_dir = CALIBRATE_DIR / self.alarm_name
         self.save_dir.mkdir(exist_ok=True, parents=True)
+
+        self.use_conv = conv
 
     def check_exists(self, name:str, filepath:Path):
         if not filepath.exists():
@@ -49,12 +53,21 @@ class AlarmCalibrator:
 
         return False
 
-    def save_frequency_to_yaml(self, frequency : float, amplitude : float, name:str, filepath:Path):
+    def save_frequency_to_yaml(self, frequency : float, threshold : float, name:str, filepath:Path, conv_kernel : None | NDArray = None):
 
-        new_data = {
-            "frequency" : frequency,
-            "amplitude" : amplitude
-        }
+        if conv_kernel is None:
+            new_data = {
+                "frequency" : frequency,
+                "amplitude" : threshold
+            }
+        else:
+            npy_path = filepath.parent / "convolutional_kernels" / f"{name}.npy"
+            npy_path.parent.mkdir(exist_ok=True, parents=True)
+            np.save(npy_path, conv_kernel)
+            new_data = {
+                "threshold" : threshold,
+                "convolutional_kernel_file": str(npy_path)
+            }
 
         new_alarm = {
             name: new_data
@@ -113,22 +126,30 @@ class AlarmCalibrator:
         plt.show()
 
 
-        alarm_frequency, amplitude = self.ah.detection_frequency(spectrogram=dbs, frequency=f, 
-                                                                 save_plot=self.save_dir / "amplitude_threshold.png")
+        if self.use_conv:
+            alarm_frequency, amplitude, pattern_matching_kernel = self.ah.detection_frequency_correlation(spectrogram=dbs, 
+                                                                                                          frequency=f, 
+                                                                                                          save_plot=self.save_dir / "convolution_threshold.png")
+            binary_detection = self.ah.get_binary_detection_correlation(audio_data=audio_data,
+                                                                        convolutional_kernel=pattern_matching_kernel,
+                                                                        conv_threshold=amplitude,
+                                                                        save_plot=self.save_dir)
+        else:
+            alarm_frequency, amplitude = self.ah.detection_frequency(spectrogram=dbs, frequency=f, 
+                                                                     save_plot=self.save_dir / "amplitude_threshold.png")
 
-        binary_detection = self.ah.get_binary_detection(audio_data=audio_data,
-                                                        alarm_frequency=alarm_frequency,
-                                                        amp_threshold=amplitude,
-                                                        interval=0.02,
-                                                        seconds=self.record_seconds,
-                                                        save_plot=self.save_dir)
+            binary_detection = self.ah.get_binary_detection(audio_data=audio_data,
+                                                            alarm_frequency=alarm_frequency,
+                                                            amp_threshold=amplitude,
+                                                            interval=0.02,
+                                                            save_plot=self.save_dir)
 
         if binary_detection.shape[0] == 0:
             print("Something went wrong with detection and we couldn't find a frequency in the same range " \
             "of your alarm.")
             raise ArithmeticError("Frequency resolution insufficient")
             exit(1)
-
+            
         closed_b_detection = self.ah.morph_closing(binary_detection=binary_detection,
                                             struct_size=60)
 
@@ -147,8 +168,11 @@ class AlarmCalibrator:
         plt.savefig(str(self.save_dir / "detected_alarm.png"))
         plt.show()
 
-        print(f"Saving the frequency {alarm_frequency} to config folder {self.config_path} " \
-            f"using name {self.alarm_name}")
+        if not self.use_conv:
+            print(f"Saving the frequency {alarm_frequency} to config folder {self.config_path} " \
+                f"using name {self.alarm_name}")
 
-        print("Type of frequency ", type(alarm_frequency))
-        self.save_frequency_to_yaml(frequency=float(alarm_frequency), amplitude=float(amplitude), name=self.alarm_name, filepath=self.config_path)
+        if self.use_conv:
+            self.save_frequency_to_yaml(frequency=float(alarm_frequency), threshold=float(amplitude), name=self.alarm_name, filepath=self.config_path, conv_kernel=pattern_matching_kernel)
+        else:        
+            self.save_frequency_to_yaml(frequency=float(alarm_frequency), threshold=float(amplitude), name=self.alarm_name, filepath=self.config_path)
