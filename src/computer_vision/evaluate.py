@@ -1,7 +1,5 @@
 '''
-python3 evaluate.py --name brigade_petit_test --alarm brigade_test 2>&1 | tee log_brigade_test.txt
-
-python3 evaluate.py --name blaxtair_new_test --alarm blaxtair 2>&1 | tee log/log_blaxtair_new.txt
+python3 evaluate.py --name blaxtair_test --alarm blaxtair 2>&1 | tee log/log_blaxtair_new.txt
 '''
 import argparse
 import yaml

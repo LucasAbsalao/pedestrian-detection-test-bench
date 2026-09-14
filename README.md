@@ -1,83 +1,109 @@
-# UGE
+# Computer Vision — Hardware in the Loop Evaluation System
 
-To adjust detections, it's recommended to use CVAT.
-How it works:
-- Create an account and use the local installation
-- Use sudo docker compose up -d to run cvat in localhost detached, i.e. It will be running on background
-- Open localhost on port 8080 (That's the default port for running but you can change it if needed)
-- Click in the + button, then in create new project, choose a name for this file and press in submit and open
-- Click on the new + button and go to create new task.
-- Give a name to your task and upload the video that you want to adjust. Then, press submit & open 
+This project evaluates **detection systems** (e.g. pedestrian detection cameras used on
+construction sites) using a **Hardware in the Loop (HIL)** setup. The core idea is:
 
+1. A video is displayed on a screen.
+2. The detection system under test watches the screen through its own camera.
+3. Every time a person crosses a **danger zone**, the system is supposed to trigger an
+   **alarm sound**.
+4. This project calibrates that alarm, generates a ground-truth annotated (and distorted)
+   dataset, and then evaluates how well the detection system performs.
 
+The repository is split into a pipeline of three main scripts (`calibrate_alarm`,
+`generate_data`, `evaluate`) plus the reusable logic under `src/computer_vision/core/`.
 
-docker build --build-arg DEV=true -t yolo:1.1 .
+---
 
-X11
-xhost +local:docker && docker run --name yolo_detection \
---device /dev/video0 \
--v $(pwd):/app \
--e DISPLAY=$DISPLAY \
--e QT_X11_NO_MITSHM=1 \
--v /tmp/.X11-unix:/tmp/.X11-unix \
--v ~/.Xauthority:/root/.Xauthority:rw \
---net=host \
---device nvidia.com/gpu=all \
--it --ipc=host --rm \
-yolo:1.3
+## Repository structure
 
+| Folder                | Description |
+|-----------------------|-------------|
+| `src/computer_vision/`| Main Python package with all the source code (see its own README). |
+| `tests/`              | Unit tests (pytest). |
+| `data/`               | Working dataset: `annotations/`, `videos/` (with `videos/distortions/`), `predict/`, and the dataset YAML files (`points.yaml`, `dataset_*.yaml`). |
+| `videos/`             | Raw source videos used to build the dataset. |
+| `datasets/`           | Small/scratch datasets. |
+| `calibrate/`          | Alarm calibration outputs (recorded `.wav`, spectrograms, amplitude plots). One sub-folder per alarm name. |
+| `evaluations/`        | Evaluation results (one CSV folder per system/test). |
+| `frames/`             | Frames extracted from videos for manual labeling. |
+| `Depth-Anything-V2/`  | Vendored submodule for monocular depth estimation (used by fog/smoke distortions). |
+| `report/`             | Report-related artifacts. |
+| `.opencode/`, `.vscode/`, `.venv/` | Tooling / virtual environment. |
 
-ctrl+d to exit or ctrl+p and ctrl+q to let it running.
+---
 
-docker start yolo_test
+## Main scripts
 
-docker exec -it yolo_test /bin/bash
+### 1. `calibrate_alarm.py`
 
+Learns the **alarm signature** of the detection system. It records 10 seconds of the alarm,
+computes its spectrogram, and stores either:
 
-## TODO
-In the actual project, just frames with detection are saved.
-add sampling to the latency recall.
+- the dominant alarm **frequency** + an **amplitude threshold**, or
+- a **pattern-matching convolution kernel** (with `--convolutional_detection`).
 
+The result is saved to `config/alarm.yaml` (or `config/alarm_conv.yaml`) so that
+`evaluate.py` can recognize the alarm later.
 
-* Exception wrapper to check if a point_data is None
-* Reduce size of yaml file saving points and annotations files separatedly. Use a key to associate each file with it's points
-* Put np nan to recall where there is no positive occurence
-* Yaml functions
-* morphological closing just in the end
-* The amplitude needs to be the mean of detection amplitude or first quartile OK
-* Points dictionary needs to be updated before detection in generate_data OK
-* Apply rain and dirty in distortions OK
-* Average Delay OK
-* Maybe some frames in the generator aren't being analysed OK (opencv fault)
-* Morphological closing in the ground_truth OK
-* Apply new rain
-* Opencv dependency
-* Check Gaussian Noise
+### 2. `generate_data.py`
 
+Builds the evaluation dataset:
 
-La fumée et le document pour le PRE
+- Marks the **danger-zone trapezoids** on each video (interactive, stored in `data/points.yaml`).
+- Runs a **YOLO26** model (changeable via `--model`) to annotate every video, writing
+  per-frame zone + bounding-box ground truth into `data/annotations/`.
+- Applies **video distortions** (gaussian noise, salt and pepper noise, convoluted gaussian noise, gaussian blur, fog, smoke, rain and dirt) to each
+  original video, saving them under `data/videos/distortions/`.
+- Emits a master YAML (`data/{dataset_name}.yaml`) mapping every video (original and
+  distorted) to its annotation and zone points.
 
-* Test erosion in detection
-* Test frame delay using an audio from the same computer 
-* Do I use a frame window even in the seconds delay detection?
-* FIX opencv dependencies
+### 3. `evaluate.py`
 
-Which distortions should I use
-Put a light in front of the screen source éblouissante
-Set a point as reference
+Runs the actual **HIL evaluation**: for every video in `data/videos/` it plays the video in
+real time while simultaneously recording the microphone, detects the alarm in the audio, and
+compares it against the ground-truth annotations. Results (accuracy, precision, recall,
+latency, delays, …) are written to a CSV under `evaluations/{alarm_name}/`.
 
+---
 
-GX020079_00_3
-GX0200686 - Normal pedestrians
+## Usage example
 
-Gaussian_noise, gaussian_noise_conv and fog
+```bash
+# 0. Install dependencies (requires ffmpeg on the system)
+./scripts/install.sh
 
-Test with a point of the same size as the screen
-Test with different resolutions
+# 1. Calibrate the alarm (frequency-based)
+cd src/computer_vision
+poetry run python3 calibrate_alarm.py --name my_alarm
 
+#    ... or with the convolution (pattern-matching) detection
+poetry run python3 calibrate_alarm.py --name my_alarm --convolutional_detection
 
+# 2. Generate the annotated + distorted dataset
+poetry run python3 generate_data.py --name my_dataset --model models/yolo26x.pt
 
-You should have ffmpeg installed
+# 3. Evaluate the detection system (HIL)
+poetry run python3 evaluate.py --name my_eval --dataset my_dataset --alarm my_alarm
+```
 
-Interesting cases:
- GX010080_02_1 - Detected some other part
+> **Note:** the scripts are run from inside `src/computer_vision/` (they import the sibling
+> `core/` package). You also need `ffmpeg` installed for video encoding.
+
+> **Experimental:** the pattern-matching detection using normalized cross-correlation (NCC)
+> (`--convolutional_detection`) is experimental. All evaluations performed so far used the
+> default frequency-based detection and did **not** use it.
+
+---
+
+## Installation
+
+- Python `>= 3.12`.
+- [Poetry](https://python-poetry.org/) for dependency management.
+- `ffmpeg` available on `PATH` (used for distortion encoding).
+
+Use `./scripts/install.sh` instead of plain `poetry install`: it installs everything and
+then removes `opencv-python` and `opencv-python-headless` (pulled in transitively by
+`ultralytics` and `label-studio` respectively) so that `opencv-contrib-python` remains the
+only package providing `cv2`. The three OpenCV flavors all ship the same `cv2` module and
+overwrite each other's files, so keeping a single provider avoids nondeterministic behavior.
