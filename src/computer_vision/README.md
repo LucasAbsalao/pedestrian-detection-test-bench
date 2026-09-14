@@ -1,6 +1,6 @@
-# Computer Vision — Hardware in the Loop Evaluation System
+# Pedestrian Detection Test Bench — Hardware in the Loop Evaluation
 
-This package implements the HIL evaluation pipeline described in the repository root
+This package implements the HIL test-bench pipeline described in the repository root
 README. A video is shown on a screen, the detection system watches it and sounds an alarm
 when a person crosses a danger zone, and this package calibrates that alarm, generates the
 annotated/distorted dataset, and evaluates the system.

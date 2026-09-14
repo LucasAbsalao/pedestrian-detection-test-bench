@@ -1,7 +1,8 @@
-# Computer Vision — Hardware in the Loop Evaluation System
+# Pedestrian Detection Test Bench — Hardware in the Loop Evaluation
 
-This project evaluates **detection systems** (e.g. pedestrian detection cameras used on
-construction sites) using a **Hardware in the Loop (HIL)** setup. The core idea is:
+This project is a **test bench for pedestrian detection systems** (e.g. the detection cameras
+used on construction sites). It evaluates them using a **Hardware in the Loop (HIL)** setup.
+The core idea is:
 
 1. A video is displayed on a screen.
 2. The detection system under test watches the screen through its own camera.

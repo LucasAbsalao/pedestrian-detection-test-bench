@@ -1,7 +1,7 @@
 [project]
-name = "computer-vision"
+name = "pedestrian-detection-test-bench"
 version = "0.1.0"
-description = ""
+description = "Hardware in the Loop test bench for pedestrian detection systems."
 authors = [
     {name = "Your Name",email = "you@example.com"}
 ]
