@@ -29,7 +29,7 @@ The repository is split into a pipeline of three main scripts (`calibrate_alarm`
 | `frames/`             | Frames extracted from videos for manual labeling. |
 | `Depth-Anything-V2/`  | Vendored submodule for monocular depth estimation (used by fog/smoke distortions). |
 | `report/`             | Report-related artifacts. |
-| `.opencode/`, `.vscode/`, `.venv/` | Tooling / virtual environment. |
+| `.vscode/`, `.venv/` | Tooling / virtual environment. |
 
 ---
 
